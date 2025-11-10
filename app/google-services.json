@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "746672084545",
+    "project_id": "minechest-b493d",
+    "storage_bucket": "minechest-b493d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:746672084545:android:5061a8e85325d63b1f58c0",
+        "android_client_info": {
+          "package_name": "com.example.minequest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFmHF5TwDh2WiZ-5PGhqXqs-ubIHYydXc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
