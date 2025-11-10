@@ -13,10 +13,10 @@ import com.example.minequest.RegisterScreen
 
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(navController: NavHostController, startDestination: String) {
     NavHost(
         navController = navController,
-        startDestination = Screens.Login.route
+        startDestination = startDestination
     ) {
         composable(route = Screens.Map.route) {
             Map(navController = navController)

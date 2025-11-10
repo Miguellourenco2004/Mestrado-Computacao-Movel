@@ -32,6 +32,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import android.Manifest
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 
 
 class MainActivity : ComponentActivity() {
@@ -90,29 +92,42 @@ class MainActivity : ComponentActivity() {
 fun MineQuestApp() {
     val navController = rememberNavController()
 
+    val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
+
+    // Track user state reactively
+    var currentUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(auth.currentUser) }
+
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        val listener = com.google.firebase.auth.FirebaseAuth.AuthStateListener { firebaseAuth ->
+            currentUser = firebaseAuth.currentUser
+        }
+        auth.addAuthStateListener(listener)
+        onDispose {
+            auth.removeAuthStateListener(listener)
+        }
+    }
+
+    // If the user is not authenticated the start destination is the login page
+    val startDestination = if (currentUser != null) {
+        Screens.Map.route
+    } else {
+        Screens.Login.route
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            Box(
-                modifier = Modifier
-                    .padding(top = 16.dp, bottom = 16.dp)
-            ) {
-                Text(
-                    text = "MineQuest",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+        bottomBar = {
+            if (currentUser != null) {
+                MineQuestBottomBar(navController = navController)
             }
-        },
-        bottomBar = { MineQuestBottomBar(navController = navController) }
+        }
     ) { innerPadding ->
         Box(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            NavGraph(navController = navController)
+            NavGraph(navController = navController, startDestination = startDestination)
         }
     }
 }
