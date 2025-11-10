@@ -1,5 +1,6 @@
 package com.example.minequest
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -20,6 +21,7 @@ import com.example.minequest.ui.theme.MineQuestTheme
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.minequest.navigation.NavGraph
@@ -29,11 +31,38 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 // ✅ Firebase importações
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import android.Manifest
+
 
 class MainActivity : ComponentActivity() {
+
+
+    private fun pedirPermissaoLocalizacao() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED ||
+            ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                1001
+            )
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        pedirPermissaoLocalizacao()
 
         //  Escreve algo no Realtime Database
         val database = Firebase.database
@@ -54,6 +83,8 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+
 
 @Composable
 fun MineQuestApp() {

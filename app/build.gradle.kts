@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    // 🔥 --- Firebase ---
+    //  --- Firebase ---
     // Controla versões automaticamente
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-analytics-ktx")
@@ -53,7 +53,10 @@ dependencies {
     implementation("com.google.firebase:firebase-auth-ktx")
     // implementation("com.google.firebase:firebase-firestore-ktx")
 
-    // --- Tuas dependências ---
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation("com.google.maps.android:maps-compose:2.11.4")
+    // --- dependências ---
     implementation(libs.androidx.navigation.compose)
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
