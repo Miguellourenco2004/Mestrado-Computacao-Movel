@@ -4,10 +4,12 @@ import androidx.navigation.compose.NavHost
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.composable
 import com.example.minequest.Chat
+import com.example.minequest.LoginScreen
 import com.example.minequest.Map
 import com.example.minequest.MineBlock
 import com.example.minequest.Profile
 import com.example.minequest.Ranking
+import com.example.minequest.RegisterScreen
 
 
 @Composable
@@ -34,6 +36,14 @@ fun NavGraph (navController: NavHostController) {
 
         composable(route = Screens.MineBlock.route){
             MineBlock(navController = navController)
+        }
+
+        composable(route = Screens.Login.route){
+            LoginScreen(navController = navController)
+        }
+
+        composable(route = Screens.Register.route){
+            RegisterScreen(navController = navController)
         }
     }
 }
