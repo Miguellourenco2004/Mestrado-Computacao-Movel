@@ -13,37 +13,38 @@ import com.example.minequest.RegisterScreen
 
 
 @Composable
-fun NavGraph (navController: NavHostController) {
+fun NavGraph(navController: NavHostController) {
     NavHost(
         navController = navController,
-        startDestination = Screens.Map.route
+        startDestination = Screens.Login.route
     ) {
-        composable(route = Screens.Map.route){
+        composable(route = Screens.Map.route) {
             Map(navController = navController)
         }
 
-        composable(route = Screens.Chat.route){
+        composable(route = Screens.Chat.route) {
             Chat(navController = navController)
         }
 
-        composable(route = Screens.Ranking.route){
+        composable(route = Screens.Ranking.route) {
             Ranking(navController = navController)
         }
 
-        composable(route = Screens.Profile.route){
+        composable(route = Screens.Profile.route) {
             Profile(navController = navController)
         }
 
-        composable(route = Screens.MineBlock.route){
+        composable(route = Screens.MineBlock.route) {
             MineBlock(navController = navController)
         }
 
-        composable(route = Screens.Login.route){
+        composable(route = Screens.Login.route) {
             LoginScreen(navController = navController)
         }
 
-        composable(route = Screens.Register.route){
+        composable(route = Screens.Register.route) {
             RegisterScreen(navController = navController)
         }
     }
 }
+
