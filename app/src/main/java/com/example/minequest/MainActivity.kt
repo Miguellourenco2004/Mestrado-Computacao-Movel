@@ -34,9 +34,12 @@ import com.google.firebase.ktx.Firebase
 import android.Manifest
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-
+import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
+
+
+
 
 
     private fun pedirPermissaoLocalizacao() {
@@ -65,6 +68,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         pedirPermissaoLocalizacao()
+
+
+
+        if (!Places.isInitialized()) {
+            Places.initialize(applicationContext, "AIzaSyDopLW7DqJf2wQG97_iiOuEKpYWj__arpo")
+        }
 
         //  Escreve algo no Realtime Database
         val database = Firebase.database
