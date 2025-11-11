@@ -12,17 +12,46 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.minequest.navigation.Screens
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.FirebaseDatabase
 
 
 @Composable
-fun Profile(navController: NavController, modifier: Modifier = Modifier) {
+fun Profile(navController: NavController, currentUser: FirebaseUser?, modifier: Modifier = Modifier) {
+    val currentUserEmail = currentUser?.email
+
+
+    // Access to the RealTime BD
+    val auth = FirebaseAuth.getInstance()
+    // Gets the users node
+    val database = FirebaseDatabase.getInstance().getReference("users")
+
+    var username by remember { mutableStateOf("User") }
+
+    LaunchedEffect(auth.currentUser) {
+        val currentUser = auth.currentUser
+        currentUser?.let { user ->
+            database.child(user.uid).get().addOnSuccessListener { snapshot ->
+                username = snapshot.child("username").getValue(String::class.java) ?: "User"
+            }.addOnFailureListener {
+                username = "User"
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -31,7 +60,7 @@ fun Profile(navController: NavController, modifier: Modifier = Modifier) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "Welcome to the Profile!",
+                text = "Welcome, $username!",
             )
 
             Spacer(modifier = Modifier.height(32.dp))

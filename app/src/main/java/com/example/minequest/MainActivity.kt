@@ -39,9 +39,6 @@ import com.google.android.libraries.places.api.Places
 class MainActivity : ComponentActivity() {
 
 
-
-
-
     private fun pedirPermissaoLocalizacao() {
         if (ActivityCompat.checkSelfPermission(
                 this,
@@ -136,7 +133,7 @@ fun MineQuestApp() {
                 .padding(innerPadding)
                 .fillMaxSize()
         ) {
-            NavGraph(navController = navController, startDestination = startDestination)
+            NavGraph(navController = navController, startDestination = startDestination, currentUser = currentUser)
         }
     }
 }

@@ -66,7 +66,7 @@ fun LoginScreen(navController: NavController) {
                         }
                         .addOnFailureListener {
                             loading = false
-                            errorMessage = "Erro ao fazer login: ${it.message}"
+                            errorMessage = "Error login in: ${it.message}"
                         }
                 },
                 modifier = Modifier.fillMaxWidth()

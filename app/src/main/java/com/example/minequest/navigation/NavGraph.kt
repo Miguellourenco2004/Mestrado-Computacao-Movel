@@ -10,10 +10,11 @@ import com.example.minequest.MineBlock
 import com.example.minequest.Profile
 import com.example.minequest.Ranking
 import com.example.minequest.RegisterScreen
+import com.google.firebase.auth.FirebaseUser
 
 
 @Composable
-fun NavGraph(navController: NavHostController, startDestination: String) {
+fun NavGraph(navController: NavHostController, startDestination: String,  currentUser: FirebaseUser? = null) {
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -31,7 +32,7 @@ fun NavGraph(navController: NavHostController, startDestination: String) {
         }
 
         composable(route = Screens.Profile.route) {
-            Profile(navController = navController)
+            Profile(navController = navController, currentUser = currentUser)
         }
 
         composable(route = Screens.MineBlock.route) {
