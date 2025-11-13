@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.minequest.navigation.Screens
+import com.example.minequest.ui.theme.MineQuestFont
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
@@ -64,16 +65,21 @@ fun Profile(
                     .size(150.dp)
                     .padding(bottom = 5.dp)
             )
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Nome do utilizador
             Text(
                 text = "$username",
+                fontFamily = MineQuestFont,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp
             )
 
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
                 text = "$pontosXP XP Points",
+                fontFamily = MineQuestFont,
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color(0xFFFF9800)
             )
@@ -96,7 +102,7 @@ fun Profile(
                     contentColor = Color.White
                 )
             ) {
-                Text("Logout")
+                Text("Logout", fontFamily = MineQuestFont)
             }
         }
     }
