@@ -167,13 +167,12 @@ fun RegisterScreen(navController: NavController) {
 fun randomImage(): String {
     return when ((1..8).random()) {
         1 -> "fb9edad1e26f75"
-        2 -> "face2"
-        3 -> "4efed46e89c72955ddc7c77ad08b2ee"
-        4 -> "578bfd439ef6ee41e103ae82b561986"
-        5 -> "faf3182a063a0f2a825cb39d959bae7"
-        6 -> "a9a4ec03fa9afc407028ca40c20ed774"
-        7 -> "big_villager_face"
-        8 -> "images"
+        2 -> "4efed46e89c72955ddc7c77ad08b2ee"
+        3 -> "578bfd439ef6ee41e103ae82b561986"
+        4 -> "faf3182a063a0f2a825cb39d959bae7"
+        5 -> "a9a4ec03fa9afc407028ca40c20ed774"
+        6 -> "big_villager_face"
+        7 -> "images"
         else -> "minecraft_creeper_face"
     }
 }

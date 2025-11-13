@@ -106,7 +106,6 @@ fun Profile(
 fun getImageResourceByName(name: String): Int {
     return when (name) {
         "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
-        "face2" -> R.drawable.face2
         "4efed46e89c72955ddc7c77ad08b2ee" -> R.drawable._4efed46e89c72955ddc7c77ad08b2ee
         "578bfd439ef6ee41e103ae82b561986" -> R.drawable._578bfd439ef6ee41e103ae82b561986
         "faf3182a063a0f2a825cb39d959bae7" -> R.drawable._faf3182a063a0f2a825cb39d959bae7
