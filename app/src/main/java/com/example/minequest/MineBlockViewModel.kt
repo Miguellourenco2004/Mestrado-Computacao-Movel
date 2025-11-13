@@ -1,7 +1,6 @@
 package com.example.minequest
 
 import androidx.lifecycle.ViewModel
-import com.example.minequest.User // Importa o User.kt (agora corrigido)
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.ktx.database
@@ -17,7 +16,6 @@ class MineQuestViewModel : ViewModel() {
     private var authListener: FirebaseAuth.AuthStateListener? = null
     private var userId: String? = null
 
-    // --- Estados (Fica igual) ---
     private val _pickaxeIndex = MutableStateFlow(0)
     val pickaxeIndex: StateFlow<Int> = _pickaxeIndex.asStateFlow()
     private val _pontosXP = MutableStateFlow(0)
@@ -25,7 +23,6 @@ class MineQuestViewModel : ViewModel() {
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     init {
-        // O "ouvinte" (Fica igual)
         authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
             val user = firebaseAuth.currentUser
             if (user != null) {
@@ -40,9 +37,6 @@ class MineQuestViewModel : ViewModel() {
         auth.addAuthStateListener(authListener!!)
     }
 
-    /**
-     * 💾 Carrega os dados (COM O NOME CORRETO)
-     */
     private fun loadUserProgress() {
         if (userId == null) {
             _pickaxeIndex.value = 0
@@ -69,9 +63,6 @@ class MineQuestViewModel : ViewModel() {
             }
     }
 
-    /**
-     * 🚀 Atualiza os dados (COM OS NOMES CORRETOS)
-     */
     fun upgradePickaxe(custoDoUpgrade: Int, maxIndex: Int) {
         if (userId == null) return
 

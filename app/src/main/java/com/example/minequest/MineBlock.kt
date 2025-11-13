@@ -17,11 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-// Imports necessários para o ViewModel e o 'delay'
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 
-// --- As tuas cores e Data Class (Fica tudo igual) ---
 val MineGreen = Color(0xFF4CAF50)
 val MineDarkGreen = Color(0xFF388E3C)
 
@@ -31,14 +29,13 @@ data class Picareta(
     val custo: Int
 )
 
-// --- Ecrã Principal ---
 @Composable
 fun MineBlock(
     navController: NavController,
     viewModel: MineQuestViewModel = viewModel() // Injeta o ViewModel
 ) {
 
-    // A tua lista de picaretas
+    //Lista de picaretas
     val listaPicaretas = listOf(
         Picareta("Wooden Pickaxe", R.drawable.madeira, 10),
         Picareta("Stone Pickaxe", R.drawable.pedra, 50),
@@ -49,12 +46,9 @@ fun MineBlock(
     )
 
     // --- LER ESTADOS DO VIEWMODEL ---
-    // O índice vem da Firebase (via ViewModel)
     val indiceAtual by viewModel.pickaxeIndex.collectAsState()
-    // A mensagem de erro
     val errorMessage by viewModel.errorMessage.collectAsState()
 
-    // Efeito para limpar a mensagem de erro depois de 3 segundos
     LaunchedEffect(errorMessage) {
         if (errorMessage != null) {
             delay(3000) // Espera 3 segundos
@@ -62,8 +56,6 @@ fun MineBlock(
         }
     }
 
-    // --- LÓGICA LOCAL ---
-    // .getOrNull é mais seguro caso o índice seja inválido
     val picaretaAtual = listaPicaretas.getOrNull(indiceAtual) ?: listaPicaretas.first()
     val proximaPicareta = listaPicaretas.getOrNull(indiceAtual + 1)
     val custoProximoUpgrade = proximaPicareta?.custo ?: 0
@@ -94,7 +86,7 @@ fun MineBlock(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f) // Ocupa o espaço restante
+                    .weight(1f)
                     .background(MineGreen, shape = RoundedCornerShape(16.dp))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -175,7 +167,6 @@ fun MineBlock(
 
                 Spacer(modifier = Modifier.weight(1f)) // Empurra a Row para baixo
 
-// O Box exterior com o fundo cinzento (fica igual)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -196,29 +187,24 @@ fun MineBlock(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
 
-                        // --- INÍCIO DA MUDANÇA ---
                         listaPicaretas.forEachIndexed { index, picareta ->
 
-                            // 1. Criamos uma Coluna para empilhar a Imagem e o Underline
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // 2. A Imagem (agora sem a borda)
                                 Image(
                                     painter = painterResource(id = picareta.imagemRes),
                                     contentDescription = picareta.nome,
                                     modifier = Modifier.size(40.dp)
                                 )
 
-                                Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
 
-                                // 3. O Underline (é um Spacer que só muda de cor)
                                 Spacer(
                                     modifier = Modifier
                                         .height(2.dp) // Altura do underline
                                         .width(40.dp)  // Largura (podes pôr 40.dp se quiseres)
                                         .background(
-                                            // A cor é Branca ou Transparente
                                             color = if (index == indiceAtual) Color.White else Color.Transparent
                                         )
                                 )

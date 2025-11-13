@@ -7,8 +7,8 @@ import com.google.firebase.database.IgnoreExtraProperties
 @IgnoreExtraProperties
 data class User(
     val username: String? = null,
-    val email: String? = null, // <-- Adicionei o email que também guardas
+    val email: String? = null,
     val pontosXP: Int? = 0,
     val profileImage: String? = null,
-    val pickaxeIndex: Int? = 0  // <-- O NOME CORRETO! (em vez de pickaxeIndex) ya bacanz
+    val pickaxeIndex: Int? = 0
 )
