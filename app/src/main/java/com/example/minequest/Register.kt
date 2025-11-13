@@ -108,12 +108,15 @@ fun RegisterScreen(navController: NavController) {
 
                                         val initialXP = 0
 
+                                        val pickaxeIndex = 0
+
                                         // Save the email and username in the Firebase DB
                                         val userData = mapOf(
                                             "username" to username,
                                             "email" to email,
                                             "profileImage" to randomImageName,
-                                            "pontosXP" to initialXP
+                                            "pontosXP" to initialXP,
+                                            "picareta" to pickaxeIndex
                                         )
 
                                         database.child(userId).setValue(userData)
