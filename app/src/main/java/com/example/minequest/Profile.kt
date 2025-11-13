@@ -27,7 +27,7 @@ fun Profile(
     val database = FirebaseDatabase.getInstance().getReference("users")
 
     var username by remember { mutableStateOf("User") }
-    var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
+    var profileImageName by remember { mutableStateOf("") }
     var pontosXP by remember { mutableStateOf(0) }
 
     // Carrega os dados do utilizador (nome + imagem)

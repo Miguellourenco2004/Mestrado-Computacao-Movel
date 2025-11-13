@@ -28,7 +28,7 @@ fun NavGraph(navController: NavHostController, startDestination: String,  curren
         }
 
         composable(route = Screens.Ranking.route) {
-            Ranking(navController = navController)
+            Ranking(navController = navController, currentUser = currentUser)
         }
 
         composable(route = Screens.Profile.route) {
