@@ -1,56 +1,53 @@
 package com.example.minequest
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.navigation.NavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.minequest.navigation.Screens
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
 
-
 @Composable
-fun Profile(navController: NavController, currentUser: FirebaseUser?, modifier: Modifier = Modifier) {
-    val currentUserEmail = currentUser?.email
-
-
-    // Access to the RealTime BD
+fun Profile(
+    navController: NavController,
+    currentUser: FirebaseUser?,
+    modifier: Modifier = Modifier
+) {
     val auth = FirebaseAuth.getInstance()
-    // Gets the users node
     val database = FirebaseDatabase.getInstance().getReference("users")
 
     var username by remember { mutableStateOf("User") }
+    var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
+    var pontosXP by remember { mutableStateOf(0) }
 
+    // Carrega os dados do utilizador (nome + imagem)
     LaunchedEffect(auth.currentUser) {
-        val currentUser = auth.currentUser
-        currentUser?.let { user ->
-            database.child(user.uid).get().addOnSuccessListener { snapshot ->
-                username = snapshot.child("username").getValue(String::class.java) ?: "User"
-            }.addOnFailureListener {
-                username = "User"
-            }
+        auth.currentUser?.let { user ->
+            database.child(user.uid).get()
+                .addOnSuccessListener { snapshot ->
+                    username = snapshot.child("username").getValue(String::class.java) ?: "User"
+                    profileImageName = snapshot.child("profileImage").getValue(String::class.java)
+                        ?: "minecraft_creeper_face"
+                    pontosXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
+                }
+                .addOnFailureListener {
+                    username = "User"
+                    pontosXP = 0
+                }
         }
     }
+
+    val imageRes = getImageResourceByName(profileImageName)
 
     Box(
         modifier = Modifier
@@ -59,19 +56,38 @@ fun Profile(navController: NavController, currentUser: FirebaseUser?, modifier: 
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "Welcome, $username!",
+            // Imagem do utilizador
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "Profile image",
+                modifier = Modifier
+                    .size(150.dp)
+                    .padding(bottom = 5.dp)
             )
+
+            // Nome do utilizador
+            Text(
+                text = "$username",
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp
+            )
+
+            Text(
+                text = "$pontosXP XP Points",
+                style = MaterialTheme.typography.bodyLarge,
+                color = Color(0xFFFF9800)
+            )
+
+
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Botão de logout
             Button(
                 onClick = {
-                    // Logout the user
                     FirebaseAuth.getInstance().signOut()
-                    // Navigate back to login screen and clear backstack
                     navController.navigate(Screens.Login.route) {
-                        popUpTo(0) // remove all previous screens
+                        popUpTo(0)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -83,5 +99,20 @@ fun Profile(navController: NavController, currentUser: FirebaseUser?, modifier: 
                 Text("Logout")
             }
         }
+    }
+}
+
+// Helper para mapear nomes -> drawable
+fun getImageResourceByName(name: String): Int {
+    return when (name) {
+        "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
+        "face2" -> R.drawable.face2
+        "4efed46e89c72955ddc7c77ad08b2ee" -> R.drawable._4efed46e89c72955ddc7c77ad08b2ee
+        "578bfd439ef6ee41e103ae82b561986" -> R.drawable._578bfd439ef6ee41e103ae82b561986
+        "faf3182a063a0f2a825cb39d959bae7" -> R.drawable._faf3182a063a0f2a825cb39d959bae7
+        "a9a4ec03fa9afc407028ca40c20ed774" -> R.drawable.a9a4ec03fa9afc407028ca40c20ed774
+        "big_villager_face" -> R.drawable.big_villager_face
+        "images" -> R.drawable.images
+        else -> R.drawable.minecraft_creeper_face
     }
 }
