@@ -116,7 +116,7 @@ fun RegisterScreen(navController: NavController) {
                                             "email" to email,
                                             "profileImage" to randomImageName,
                                             "pontosXP" to initialXP,
-                                            "picareta" to pickaxeIndex
+                                            "pickaxeIndex" to pickaxeIndex
                                         )
 
                                         database.child(userId).setValue(userData)

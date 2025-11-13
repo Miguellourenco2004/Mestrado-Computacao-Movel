@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -19,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
+import com.example.minequest.ui.theme.MineQuestFont
 
 val MineGreen = Color(0xFF4CAF50)
 val MineDarkGreen = Color(0xFF388E3C)
@@ -79,7 +82,8 @@ fun MineBlock(
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
-                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp)
+                modifier = Modifier.padding(top = 16.dp, bottom = 32.dp),
+                fontFamily = MineQuestFont
             )
 
             // Área central com fundo verde
@@ -91,67 +95,104 @@ fun MineBlock(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Botão "Nome da Picareta"
-                Button(
-                    onClick = { /* TODO: Minar */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = MineDarkGreen),
-                    shape = RoundedCornerShape(8.dp),
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(70.dp)
-                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(0.8f) // Mantém a largura do botão antigo
+                        .height(70.dp)      // Mantém a altura
+                        .padding(vertical = 8.dp) // Mantém o padding
+                        .background( // Fundo cinzento-escuro igual ao da Row
+                            color = Color(0xFF323232),
+                            shape = RoundedCornerShape(16.dp) // Cantos arredondados
+                        )
+                        .border(
+                            width = 2.dp,
+                            color = Color(0xFF6B3B25),
+                            shape = RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(text = picaretaAtual.nome, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = picaretaAtual.nome,
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = MineQuestFont
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Imagem da Picareta
                 Image(
                     painter = painterResource(id = picaretaAtual.imagemRes),
                     contentDescription = picaretaAtual.nome,
                     modifier = Modifier.size(150.dp)
                 )
 
-                Spacer(modifier = Modifier.height(50.dp))
-
-                // Botão de Upgrade
-                Button(
-                    onClick = {
-                        // Chama a lógica do ViewModel
-                        viewModel.upgradePickaxe(
-                            custoDoUpgrade = custoProximoUpgrade,
-                            maxIndex = listaPicaretas.size - 1
-                        )
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MineDarkGreen),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth(0.8f)
-                        .height(70.dp)
-                        .padding(vertical = 8.dp)
-
-                ) {
-                    Text(text = "Upgrade", color = Color.White, fontSize = 25.sp, fontWeight = FontWeight.Bold)
-                }
-
-                // Texto do Custo
                 if (proximaPicareta != null) {
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    Button(
+                        onClick = {
+                            viewModel.upgradePickaxe(
+                                custoDoUpgrade = custoProximoUpgrade,
+                                maxIndex = listaPicaretas.size - 1
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MineDarkGreen),
+                        shape = RoundedCornerShape(40.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(0.8f)
+                            .height(70.dp)
+                            .padding(vertical = 8.dp)
+                            .border( // Borda castanha igual ao da Row
+                                width = 2.dp,
+                                color = Color(0xFF6B3B25),
+                                shape = RoundedCornerShape(40.dp)
+                            ),
+                    ) {
+                        Text(text = "Upgrade", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
+                    }
                     Text(
-                        text = "Cost: $custoProximoUpgrade XP", // Juntei "XP"
+                        text = "Cost: $custoProximoUpgrade XP",
                         color = Color.White,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp)
+                        modifier = Modifier.padding(top = 16.dp),
+                        fontFamily = MineQuestFont
                     )
+
                 } else {
-                    Text(
-                        text = "Max Level!",
-                        color = Color.Yellow,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
+                    Spacer(modifier = Modifier.height(30.dp))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+
+                        Text(
+                            text = "You have reached the max level!",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = MineQuestFont
+                        )
+                        Text(
+                            text = "Congratulations!",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = MineQuestFont
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Image(
+                            painter = painterResource(id = R.drawable.steve),
+                            contentDescription = "Max Level",
+                            modifier = Modifier
+                                .size(175.dp), // Ajuste o tamanho como preferir
+                            contentScale = ContentScale.Fit
+                        )
+                    }
                 }
 
                 // Mostra a mensagem de erro vinda do ViewModel
@@ -166,6 +207,8 @@ fun MineBlock(
                 }
 
                 Spacer(modifier = Modifier.weight(1f)) // Empurra a Row para baixo
+
+                Text(text = "All Pickaxes", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
 
                 Box(
                     modifier = Modifier
@@ -195,7 +238,8 @@ fun MineBlock(
                                 Image(
                                     painter = painterResource(id = picareta.imagemRes),
                                     contentDescription = picareta.nome,
-                                    modifier = Modifier.size(40.dp)
+                                    modifier = Modifier
+                                        .size(40.dp)
                                 )
 
                                 Spacer(modifier = Modifier.height(6.dp))
