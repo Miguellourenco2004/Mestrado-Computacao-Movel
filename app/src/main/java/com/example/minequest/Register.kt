@@ -103,10 +103,17 @@ fun RegisterScreen(navController: NavController) {
                                     .addOnSuccessListener { result ->
                                         val userId = result.user?.uid ?: return@addOnSuccessListener
 
+                                        // Define a random image to the user profile
+                                        val randomImageName = randomImage()
+
+                                        val initialXP = 0
+
                                         // Save the email and username in the Firebase DB
                                         val userData = mapOf(
                                             "username" to username,
-                                            "email" to email
+                                            "email" to email,
+                                            "profileImage" to randomImageName,
+                                            "pontosXP" to initialXP
                                         )
 
                                         database.child(userId).setValue(userData)
@@ -156,3 +163,19 @@ fun RegisterScreen(navController: NavController) {
         }
     }
 }
+
+fun randomImage(): String {
+    return when ((1..8).random()) {
+        1 -> "fb9edad1e26f75"
+        2 -> "face2"
+        3 -> "4efed46e89c72955ddc7c77ad08b2ee"
+        4 -> "578bfd439ef6ee41e103ae82b561986"
+        5 -> "faf3182a063a0f2a825cb39d959bae7"
+        6 -> "a9a4ec03fa9afc407028ca40c20ed774"
+        7 -> "big_villager_face"
+        8 -> "images"
+        else -> "minecraft_creeper_face"
+    }
+}
+
+
