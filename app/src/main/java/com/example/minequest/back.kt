@@ -1,5 +1,6 @@
 package com.example.minequest
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
@@ -16,6 +17,16 @@ import org.json.JSONObject
 class MapViewModel : ViewModel() {
 
     // LOCALIZAÇÃO ATUAL
+
+    private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
+    val lisboaMarkers = _lisboaMarkers.asStateFlow()
+
+    private val _setubalMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
+    val setubalMarkers = _setubalMarkers.asStateFlow()
+
+    private val _portugalMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
+    val portugalMarkers = _portugalMarkers.asStateFlow()
+
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation = _currentLocation.asStateFlow()
 
@@ -114,4 +125,33 @@ class MapViewModel : ViewModel() {
             _routePoints.value = decoded
         }
     }
+
+    fun loadMarkers(context: Context) {
+        val inputStream = context.resources.openRawResource(R.raw.markers)
+        val json = inputStream.bufferedReader().use { it.readText() }
+
+        val obj = JSONObject(json)
+
+        fun parseArray(key: String): List<MapMarker> {
+            val arr = obj.getJSONArray(key)
+            val list = mutableListOf<MapMarker>()
+            for (i in 0 until arr.length()) {
+                val o = arr.getJSONObject(i)
+                list.add(
+                    MapMarker(
+                        id = o.getString("id"),
+                        name = o.getString("name"),
+                        lat = o.getDouble("lat"),
+                        lng = o.getDouble("lng")
+                    )
+                )
+            }
+            return list
+        }
+
+        _lisboaMarkers.value = parseArray("lisboa")
+        _setubalMarkers.value = parseArray("setubal")
+        _portugalMarkers.value = parseArray("portugal")
+    }
+
 }

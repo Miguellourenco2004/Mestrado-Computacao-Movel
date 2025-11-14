@@ -1,0 +1,1208 @@
+{
+  "lisboa": [
+    {
+      "id": "lis_0",
+      "name": "Miradouro da Senhora do Monte",
+      "lat": 38.72047,
+      "lng": -9.13179
+    },
+    {
+      "id": "lis_1",
+      "name": "Jardim da Estrela",
+      "lat": 38.71393,
+      "lng": -9.16048
+    },
+    {
+      "id": "lis_2",
+      "name": "Mercado de Arroios",
+      "lat": 38.73467,
+      "lng": -9.13589
+    },
+    {
+      "id": "lis_3",
+      "name": "Campo Mártires da Pátria",
+      "lat": 38.72649,
+      "lng": -9.13938
+    },
+    {
+      "id": "lis_4",
+      "name": "Amoreiras",
+      "lat": 38.72347,
+      "lng": -9.15953
+    },
+    {
+      "id": "lis_5",
+      "name": "Praça de Espanha",
+      "lat": 38.73777,
+      "lng": -9.15916
+    },
+    {
+      "id": "lis_6",
+      "name": "Alameda Dom Afonso Henriques",
+      "lat": 38.73677,
+      "lng": -9.13466
+    },
+    {
+      "id": "lis_7",
+      "name": "Jardim do Torel",
+      "lat": 38.71844,
+      "lng": -9.14104
+    },
+    {
+      "id": "lis_8",
+      "name": "Belém Cultural Center",
+      "lat": 38.6972,
+      "lng": -9.20701
+    },
+    {
+      "id": "lis_9",
+      "name": "Jardim Botânico de Lisboa",
+      "lat": 38.72173,
+      "lng": -9.15206
+    },
+    {
+      "id": "lis_10",
+      "name": "Parque Eduardo VII",
+      "lat": 38.72786,
+      "lng": -9.15362
+    },
+    {
+      "id": "lis_11",
+      "name": "Tapada das Necessidades",
+      "lat": 38.70745,
+      "lng": -9.16896
+    },
+    {
+      "id": "lis_12",
+      "name": "Ajuda Palace",
+      "lat": 38.71025,
+      "lng": -9.20042
+    },
+    {
+      "id": "lis_13",
+      "name": "Telecabine Parque Nações",
+      "lat": 38.76947,
+      "lng": -9.09449
+    },
+    {
+      "id": "lis_14",
+      "name": "Estufa Fria",
+      "lat": 38.72738,
+      "lng": -9.1527
+    },
+    {
+      "id": "lis_15",
+      "name": "Lisboa Local 0",
+      "lat": 38.72656172412622,
+      "lng": -9.15329324452515
+    },
+    {
+      "id": "lis_16",
+      "name": "Lisboa Local 1",
+      "lat": 38.78057293103084,
+      "lng": -9.108526017727813
+    },
+    {
+      "id": "lis_17",
+      "name": "Lisboa Local 2",
+      "lat": 38.74216909561095,
+      "lng": -9.236363064150579
+    },
+    {
+      "id": "lis_18",
+      "name": "Lisboa Local 3",
+      "lat": 38.76021366435463,
+      "lng": -9.150553002841766
+    },
+    {
+      "id": "lis_19",
+      "name": "Lisboa Local 4",
+      "lat": 38.72435963775455,
+      "lng": -9.231001682535211
+    },
+    {
+      "id": "lis_20",
+      "name": "Lisboa Local 5",
+      "lat": 38.73453997707761,
+      "lng": -9.176585279362282
+    },
+    {
+      "id": "lis_21",
+      "name": "Lisboa Local 6",
+      "lat": 38.72433154448051,
+      "lng": -9.086202203722735
+    },
+    {
+      "id": "lis_22",
+      "name": "Lisboa Local 7",
+      "lat": 38.76264071350064,
+      "lng": -9.110078420492094
+    },
+    {
+      "id": "lis_23",
+      "name": "Lisboa Local 8",
+      "lat": 38.73750942013053,
+      "lng": -9.180741926852127
+    },
+    {
+      "id": "lis_24",
+      "name": "Lisboa Local 9",
+      "lat": 38.77569254796946,
+      "lng": -9.101022900837068
+    },
+    {
+      "id": "lis_25",
+      "name": "Lisboa Local 10",
+      "lat": 38.72721400024877,
+      "lng": -9.164298093958443
+    },
+    {
+      "id": "lis_26",
+      "name": "Lisboa Local 11",
+      "lat": 38.70583593973815,
+      "lng": -9.114472424273567
+    },
+    {
+      "id": "lis_27",
+      "name": "Lisboa Local 12",
+      "lat": 38.76464487445726,
+      "lng": -9.109882776972576
+    },
+    {
+      "id": "lis_28",
+      "name": "Lisboa Local 13",
+      "lat": 38.707858565281896,
+      "lng": -9.18524898468885
+    },
+    {
+      "id": "lis_29",
+      "name": "Lisboa Local 14",
+      "lat": 38.7426097367061,
+      "lng": -9.08936527445801
+    },
+    {
+      "id": "lis_30",
+      "name": "Lisboa Local 15",
+      "lat": 38.700300693678436,
+      "lng": -9.152315002717913
+    },
+    {
+      "id": "lis_31",
+      "name": "Lisboa Local 16",
+      "lat": 38.76305870137105,
+      "lng": -9.210797213753498
+    },
+    {
+      "id": "lis_32",
+      "name": "Lisboa Local 17",
+      "lat": 38.70640270629669,
+      "lng": -9.083798217239575
+    },
+    {
+      "id": "lis_33",
+      "name": "Lisboa Local 18",
+      "lat": 38.729212352601586,
+      "lng": -9.15346975359031
+    },
+    {
+      "id": "lis_34",
+      "name": "Lisboa Local 19",
+      "lat": 38.746603565579434,
+      "lng": -9.182292392257537
+    },
+    {
+      "id": "lis_35",
+      "name": "Lisboa Local 20",
+      "lat": 38.7506658699167,
+      "lng": -9.114836015452058
+    },
+    {
+      "id": "lis_36",
+      "name": "Lisboa Local 21",
+      "lat": 38.782188418142724,
+      "lng": -9.155408754421074
+    },
+    {
+      "id": "lis_37",
+      "name": "Lisboa Local 22",
+      "lat": 38.697915045835956,
+      "lng": -9.198882476726501
+    },
+    {
+      "id": "lis_38",
+      "name": "Lisboa Local 23",
+      "lat": 38.74453808771252,
+      "lng": -9.11566916664381
+    },
+    {
+      "id": "lis_39",
+      "name": "Lisboa Local 24",
+      "lat": 38.77323131632363,
+      "lng": -9.147443226323336
+    },
+    {
+      "id": "lis_40",
+      "name": "Lisboa Local 25",
+      "lat": 38.73163567441476,
+      "lng": -9.232223070529884
+    },
+    {
+      "id": "lis_41",
+      "name": "Lisboa Local 26",
+      "lat": 38.75825874703868,
+      "lng": -9.150132626722076
+    },
+    {
+      "id": "lis_42",
+      "name": "Lisboa Local 27",
+      "lat": 38.74853029477866,
+      "lng": -9.0888252006615
+    },
+    {
+      "id": "lis_43",
+      "name": "Lisboa Local 28",
+      "lat": 38.79818495110333,
+      "lng": -9.227298806009427
+    },
+    {
+      "id": "lis_44",
+      "name": "Lisboa Local 29",
+      "lat": 38.706065846211764,
+      "lng": -9.210048886706698
+    },
+    {
+      "id": "lis_45",
+      "name": "Lisboa Local 30",
+      "lat": 38.76675027633612,
+      "lng": -9.18262828071419
+    },
+    {
+      "id": "lis_46",
+      "name": "Lisboa Local 31",
+      "lat": 38.766914234682424,
+      "lng": -9.107116109532125
+    },
+    {
+      "id": "lis_47",
+      "name": "Lisboa Local 32",
+      "lat": 38.79950443615241,
+      "lng": -9.200481395414819
+    },
+    {
+      "id": "lis_48",
+      "name": "Lisboa Local 33",
+      "lat": 38.70600238363998,
+      "lng": -9.174744583714507
+    },
+    {
+      "id": "lis_49",
+      "name": "Lisboa Local 34",
+      "lat": 38.78747274516961,
+      "lng": -9.237137364281782
+    }
+  ],
+  "setubal": [
+    {
+      "id": "set_0",
+      "name": "Praia da Figueirinha",
+      "lat": 38.4804,
+      "lng": -8.983
+    },
+    {
+      "id": "set_1",
+      "name": "Portinho da Arrábida",
+      "lat": 38.4824,
+      "lng": -8.9913
+    },
+    {
+      "id": "set_2",
+      "name": "Miradouro de São Filipe",
+      "lat": 38.51705,
+      "lng": -8.88947
+    },
+    {
+      "id": "set_3",
+      "name": "Vila Nogueira de Azeitão",
+      "lat": 38.51933,
+      "lng": -9.00654
+    },
+    {
+      "id": "set_4",
+      "name": "Tróia Praia",
+      "lat": 38.48613,
+      "lng": -8.91044
+    },
+    {
+      "id": "set_5",
+      "name": "Melides Praia",
+      "lat": 38.12813,
+      "lng": -8.78511
+    },
+    {
+      "id": "set_6",
+      "name": "Lagoa de Santo André",
+      "lat": 38.11194,
+      "lng": -8.79936
+    },
+    {
+      "id": "set_7",
+      "name": "Serra da Arrábida",
+      "lat": 38.4804,
+      "lng": -9.0
+    },
+    {
+      "id": "set_8",
+      "name": "Centro de Setúbal",
+      "lat": 38.5244,
+      "lng": -8.8882
+    },
+    {
+      "id": "set_9",
+      "name": "Parque Urbano de Albarquel",
+      "lat": 38.5156,
+      "lng": -8.9399
+    },
+    {
+      "id": "set_10",
+      "name": "Castelo de Palmela",
+      "lat": 38.5695,
+      "lng": -8.901
+    },
+    {
+      "id": "set_11",
+      "name": "Cais Palafítico da Carrasqueira",
+      "lat": 38.37444,
+      "lng": -8.75974
+    },
+    {
+      "id": "set_12",
+      "name": "Comporta Praia",
+      "lat": 38.37722,
+      "lng": -8.79321
+    },
+    {
+      "id": "set_13",
+      "name": "Soltróia",
+      "lat": 38.4742,
+      "lng": -8.8625
+    },
+    {
+      "id": "set_14",
+      "name": "Galapos Praia",
+      "lat": 38.4828,
+      "lng": -8.9927
+    },
+    {
+      "id": "set_15",
+      "name": "Setubal Local 0",
+      "lat": 38.33106640057571,
+      "lng": -8.8302066222587
+    },
+    {
+      "id": "set_16",
+      "name": "Setubal Local 1",
+      "lat": 38.305729660072124,
+      "lng": -8.568984675804774
+    },
+    {
+      "id": "set_17",
+      "name": "Setubal Local 2",
+      "lat": 38.448045780130684,
+      "lng": -8.605194432654091
+    },
+    {
+      "id": "set_18",
+      "name": "Setubal Local 3",
+      "lat": 38.464374997911506,
+      "lng": -8.820745017582944
+    },
+    {
+      "id": "set_19",
+      "name": "Setubal Local 4",
+      "lat": 38.317900794389935,
+      "lng": -9.018697932998787
+    },
+    {
+      "id": "set_20",
+      "name": "Setubal Local 5",
+      "lat": 38.55837003092439,
+      "lng": -9.167523878630188
+    },
+    {
+      "id": "set_21",
+      "name": "Setubal Local 6",
+      "lat": 38.4705981747231,
+      "lng": -9.068902395965361
+    },
+    {
+      "id": "set_22",
+      "name": "Setubal Local 7",
+      "lat": 38.39663530151992,
+      "lng": -8.584942836728368
+    },
+    {
+      "id": "set_23",
+      "name": "Setubal Local 8",
+      "lat": 38.47878969071755,
+      "lng": -8.564655110320588
+    },
+    {
+      "id": "set_24",
+      "name": "Setubal Local 9",
+      "lat": 38.38554094285672,
+      "lng": -8.589102216241617
+    },
+    {
+      "id": "set_25",
+      "name": "Setubal Local 10",
+      "lat": 38.53391957257573,
+      "lng": -8.511120217480713
+    },
+    {
+      "id": "set_26",
+      "name": "Setubal Local 11",
+      "lat": 38.336115020419896,
+      "lng": -8.563129064561497
+    },
+    {
+      "id": "set_27",
+      "name": "Setubal Local 12",
+      "lat": 38.512816841829164,
+      "lng": -9.00129646073777
+    },
+    {
+      "id": "set_28",
+      "name": "Setubal Local 13",
+      "lat": 38.41038935496022,
+      "lng": -8.768426035556681
+    },
+    {
+      "id": "set_29",
+      "name": "Setubal Local 14",
+      "lat": 38.481019527928765,
+      "lng": -9.057228192782562
+    },
+    {
+      "id": "set_30",
+      "name": "Setubal Local 15",
+      "lat": 38.34791776796965,
+      "lng": -8.520089509154518
+    },
+    {
+      "id": "set_31",
+      "name": "Setubal Local 16",
+      "lat": 38.38222489689976,
+      "lng": -8.69537358051151
+    },
+    {
+      "id": "set_32",
+      "name": "Setubal Local 17",
+      "lat": 38.519982302760916,
+      "lng": -8.71359458324278
+    },
+    {
+      "id": "set_33",
+      "name": "Setubal Local 18",
+      "lat": 38.49818196225401,
+      "lng": -8.990523804302365
+    },
+    {
+      "id": "set_34",
+      "name": "Setubal Local 19",
+      "lat": 38.45789154216078,
+      "lng": -8.745512000688663
+    },
+    {
+      "id": "set_35",
+      "name": "Setubal Local 20",
+      "lat": 38.42972699009905,
+      "lng": -8.78183673974378
+    },
+    {
+      "id": "set_36",
+      "name": "Setubal Local 21",
+      "lat": 38.30614316847843,
+      "lng": -8.73566771290196
+    },
+    {
+      "id": "set_37",
+      "name": "Setubal Local 22",
+      "lat": 38.43938929948074,
+      "lng": -8.773165134304733
+    },
+    {
+      "id": "set_38",
+      "name": "Setubal Local 23",
+      "lat": 38.35287190526165,
+      "lng": -8.517845340664675
+    },
+    {
+      "id": "set_39",
+      "name": "Setubal Local 24",
+      "lat": 38.33239997973343,
+      "lng": -8.637646142908416
+    },
+    {
+      "id": "set_40",
+      "name": "Setubal Local 25",
+      "lat": 38.40450034855144,
+      "lng": -8.562259244215467
+    },
+    {
+      "id": "set_41",
+      "name": "Setubal Local 26",
+      "lat": 38.51078912091746,
+      "lng": -8.820859224685321
+    },
+    {
+      "id": "set_42",
+      "name": "Setubal Local 27",
+      "lat": 38.38360342828078,
+      "lng": -8.51157299066335
+    },
+    {
+      "id": "set_43",
+      "name": "Setubal Local 28",
+      "lat": 38.50591299368842,
+      "lng": -8.602009469645497
+    },
+    {
+      "id": "set_44",
+      "name": "Setubal Local 29",
+      "lat": 38.35309595078813,
+      "lng": -8.500913940986944
+    },
+    {
+      "id": "set_45",
+      "name": "Setubal Local 30",
+      "lat": 38.4224681018913,
+      "lng": -8.801839348518053
+    },
+    {
+      "id": "set_46",
+      "name": "Setubal Local 31",
+      "lat": 38.40168215544687,
+      "lng": -8.74558978311918
+    },
+    {
+      "id": "set_47",
+      "name": "Setubal Local 32",
+      "lat": 38.452860303774976,
+      "lng": -8.503904974929306
+    },
+    {
+      "id": "set_48",
+      "name": "Setubal Local 33",
+      "lat": 38.45984739306277,
+      "lng": -8.899112409151183
+    },
+    {
+      "id": "set_49",
+      "name": "Setubal Local 34",
+      "lat": 38.42611669441541,
+      "lng": -8.717677042021283
+    }
+  ],
+  "portugal": [
+    {
+      "id": "pt_0",
+      "name": "Ribeira do Porto",
+      "lat": 41.14019,
+      "lng": -8.61141
+    },
+    {
+      "id": "pt_1",
+      "name": "Braga Bom Jesus",
+      "lat": 41.5549,
+      "lng": -8.37909
+    },
+    {
+      "id": "pt_2",
+      "name": "Coimbra Universidade",
+      "lat": 40.20722,
+      "lng": -8.42651
+    },
+    {
+      "id": "pt_3",
+      "name": "Évora Templo de Diana",
+      "lat": 38.57353,
+      "lng": -7.90557
+    },
+    {
+      "id": "pt_4",
+      "name": "Faro Marina",
+      "lat": 37.017,
+      "lng": -7.9351
+    },
+    {
+      "id": "pt_5",
+      "name": "Lagos Ponta da Piedade",
+      "lat": 37.08381,
+      "lng": -8.67121
+    },
+    {
+      "id": "pt_6",
+      "name": "Viana do Castelo Centro",
+      "lat": 41.6946,
+      "lng": -8.8301
+    },
+    {
+      "id": "pt_7",
+      "name": "Guimarães Centro Histórico",
+      "lat": 41.441,
+      "lng": -8.2952
+    },
+    {
+      "id": "pt_8",
+      "name": "Serra da Estrela Torre",
+      "lat": 40.3218,
+      "lng": -7.6128
+    },
+    {
+      "id": "pt_9",
+      "name": "Castelo de Bragança",
+      "lat": 41.8062,
+      "lng": -6.7567
+    },
+    {
+      "id": "pt_10",
+      "name": "Portugal Local 0",
+      "lat": 38.94298839633995,
+      "lng": -6.13654514325985
+    },
+    {
+      "id": "pt_11",
+      "name": "Portugal Local 1",
+      "lat": 40.14404330099452,
+      "lng": -8.094243172712064
+    },
+    {
+      "id": "pt_12",
+      "name": "Portugal Local 2",
+      "lat": 39.792036187981175,
+      "lng": -6.280781820006281
+    },
+    {
+      "id": "pt_13",
+      "name": "Portugal Local 3",
+      "lat": 39.82024759309351,
+      "lng": -6.930884046819447
+    },
+    {
+      "id": "pt_14",
+      "name": "Portugal Local 4",
+      "lat": 39.08224051286345,
+      "lng": -8.6101641138069
+    },
+    {
+      "id": "pt_15",
+      "name": "Portugal Local 5",
+      "lat": 38.84566753260931,
+      "lng": -8.419235612009647
+    },
+    {
+      "id": "pt_16",
+      "name": "Portugal Local 6",
+      "lat": 41.05029111259225,
+      "lng": -8.351945277986172
+    },
+    {
+      "id": "pt_17",
+      "name": "Portugal Local 7",
+      "lat": 40.41564551163762,
+      "lng": -7.701607655244916
+    },
+    {
+      "id": "pt_18",
+      "name": "Portugal Local 8",
+      "lat": 39.870770627344015,
+      "lng": -7.357558301224074
+    },
+    {
+      "id": "pt_19",
+      "name": "Portugal Local 9",
+      "lat": 38.854168030908106,
+      "lng": -8.50259893636819
+    },
+    {
+      "id": "pt_20",
+      "name": "Portugal Local 10",
+      "lat": 39.25099499172777,
+      "lng": -8.153321463140877
+    },
+    {
+      "id": "pt_21",
+      "name": "Portugal Local 11",
+      "lat": 41.468802979958156,
+      "lng": -7.460344987663914
+    },
+    {
+      "id": "pt_22",
+      "name": "Portugal Local 12",
+      "lat": 40.11591496276415,
+      "lng": -7.821079841393599
+    },
+    {
+      "id": "pt_23",
+      "name": "Portugal Local 13",
+      "lat": 36.980471581195935,
+      "lng": -8.847617168506726
+    },
+    {
+      "id": "pt_24",
+      "name": "Portugal Local 14",
+      "lat": 38.47151097630023,
+      "lng": -6.337640048324346
+    },
+    {
+      "id": "pt_25",
+      "name": "Portugal Local 15",
+      "lat": 40.41248588755169,
+      "lng": -7.217996506778108
+    },
+    {
+      "id": "pt_26",
+      "name": "Portugal Local 16",
+      "lat": 38.155024926546076,
+      "lng": -7.362394425189121
+    },
+    {
+      "id": "pt_27",
+      "name": "Portugal Local 17",
+      "lat": 39.84418186676121,
+      "lng": -7.605513108629128
+    },
+    {
+      "id": "pt_28",
+      "name": "Portugal Local 18",
+      "lat": 37.508644823515866,
+      "lng": -6.773337411850832
+    },
+    {
+      "id": "pt_29",
+      "name": "Portugal Local 19",
+      "lat": 38.398804818077075,
+      "lng": -8.569072199875144
+    },
+    {
+      "id": "pt_30",
+      "name": "Portugal Local 20",
+      "lat": 39.11509136469306,
+      "lng": -6.0511561462405075
+    },
+    {
+      "id": "pt_31",
+      "name": "Portugal Local 21",
+      "lat": 41.053365380620036,
+      "lng": -6.606631523924392
+    },
+    {
+      "id": "pt_32",
+      "name": "Portugal Local 22",
+      "lat": 41.33658351534406,
+      "lng": -7.8396455422742575
+    },
+    {
+      "id": "pt_33",
+      "name": "Portugal Local 23",
+      "lat": 38.67352148875683,
+      "lng": -6.556442527949973
+    },
+    {
+      "id": "pt_34",
+      "name": "Portugal Local 24",
+      "lat": 37.028183286795084,
+      "lng": -8.942419383688238
+    },
+    {
+      "id": "pt_35",
+      "name": "Portugal Local 25",
+      "lat": 39.77182658795569,
+      "lng": -6.637775041091711
+    },
+    {
+      "id": "pt_36",
+      "name": "Portugal Local 26",
+      "lat": 41.28558736395738,
+      "lng": -8.931152581520863
+    },
+    {
+      "id": "pt_37",
+      "name": "Portugal Local 27",
+      "lat": 37.730882455891624,
+      "lng": -8.762808533461298
+    },
+    {
+      "id": "pt_38",
+      "name": "Portugal Local 28",
+      "lat": 39.84921780158454,
+      "lng": -7.436540817301347
+    },
+    {
+      "id": "pt_39",
+      "name": "Portugal Local 29",
+      "lat": 37.8877042857159,
+      "lng": -7.557029588424286
+    },
+    {
+      "id": "pt_40",
+      "name": "Portugal Local 30",
+      "lat": 37.46693397489014,
+      "lng": -8.610915217115032
+    },
+    {
+      "id": "pt_41",
+      "name": "Portugal Local 31",
+      "lat": 42.00634391577927,
+      "lng": -6.200662462485399
+    },
+    {
+      "id": "pt_42",
+      "name": "Portugal Local 32",
+      "lat": 39.85534567482759,
+      "lng": -8.116377535152154
+    },
+    {
+      "id": "pt_43",
+      "name": "Portugal Local 33",
+      "lat": 39.141050470292356,
+      "lng": -6.115722147899545
+    },
+    {
+      "id": "pt_44",
+      "name": "Portugal Local 34",
+      "lat": 41.82386648843966,
+      "lng": -7.75332378168004
+    },
+    {
+      "id": "pt_45",
+      "name": "Portugal Local 35",
+      "lat": 38.20535453665592,
+      "lng": -6.695106894874423
+    },
+    {
+      "id": "pt_46",
+      "name": "Portugal Local 36",
+      "lat": 39.83682349160133,
+      "lng": -6.6784554451597895
+    },
+    {
+      "id": "pt_47",
+      "name": "Portugal Local 37",
+      "lat": 38.659471669940544,
+      "lng": -8.618351483506213
+    },
+    {
+      "id": "pt_48",
+      "name": "Portugal Local 38",
+      "lat": 37.50778462427871,
+      "lng": -8.517316464151742
+    },
+    {
+      "id": "pt_49",
+      "name": "Portugal Local 39",
+      "lat": 41.29726957368342,
+      "lng": -9.369406168977472
+    },
+    {
+      "id": "pt_50",
+      "name": "Portugal Local 40",
+      "lat": 39.746585885257176,
+      "lng": -7.791984367371388
+    },
+    {
+      "id": "pt_51",
+      "name": "Portugal Local 41",
+      "lat": 39.27821410915362,
+      "lng": -8.327607287011062
+    },
+    {
+      "id": "pt_52",
+      "name": "Portugal Local 42",
+      "lat": 37.69048017280221,
+      "lng": -7.324394504238807
+    },
+    {
+      "id": "pt_53",
+      "name": "Portugal Local 43",
+      "lat": 39.124969619607334,
+      "lng": -9.388917371306027
+    },
+    {
+      "id": "pt_54",
+      "name": "Portugal Local 44",
+      "lat": 37.95348605757826,
+      "lng": -8.313908673380817
+    },
+    {
+      "id": "pt_55",
+      "name": "Portugal Local 45",
+      "lat": 39.692134138792,
+      "lng": -7.812553660582163
+    },
+    {
+      "id": "pt_56",
+      "name": "Portugal Local 46",
+      "lat": 38.32435301623744,
+      "lng": -9.050289028201826
+    },
+    {
+      "id": "pt_57",
+      "name": "Portugal Local 47",
+      "lat": 41.098167534843505,
+      "lng": -8.984026512885407
+    },
+    {
+      "id": "pt_58",
+      "name": "Portugal Local 48",
+      "lat": 39.84364028948028,
+      "lng": -6.132134601040754
+    },
+    {
+      "id": "pt_59",
+      "name": "Portugal Local 49",
+      "lat": 38.57692134086524,
+      "lng": -7.0009349588147325
+    },
+    {
+      "id": "pt_60",
+      "name": "Portugal Local 50",
+      "lat": 39.57705473239176,
+      "lng": -7.697653717895999
+    },
+    {
+      "id": "pt_61",
+      "name": "Portugal Local 51",
+      "lat": 37.165398719176416,
+      "lng": -9.183013340320906
+    },
+    {
+      "id": "pt_62",
+      "name": "Portugal Local 52",
+      "lat": 41.08384880616644,
+      "lng": -7.356735763387794
+    },
+    {
+      "id": "pt_63",
+      "name": "Portugal Local 53",
+      "lat": 40.30521087025182,
+      "lng": -7.504011455782047
+    },
+    {
+      "id": "pt_64",
+      "name": "Portugal Local 54",
+      "lat": 41.39054403758123,
+      "lng": -7.920525254926611
+    },
+    {
+      "id": "pt_65",
+      "name": "Portugal Local 55",
+      "lat": 39.651366820321314,
+      "lng": -8.466088924723826
+    },
+    {
+      "id": "pt_66",
+      "name": "Portugal Local 56",
+      "lat": 40.26800450282918,
+      "lng": -7.4111241316778615
+    },
+    {
+      "id": "pt_67",
+      "name": "Portugal Local 57",
+      "lat": 39.05127936695753,
+      "lng": -7.053913996250456
+    },
+    {
+      "id": "pt_68",
+      "name": "Portugal Local 58",
+      "lat": 36.986902708357334,
+      "lng": -8.769904639868104
+    },
+    {
+      "id": "pt_69",
+      "name": "Portugal Local 59",
+      "lat": 39.57697786987079,
+      "lng": -9.139878598824872
+    },
+    {
+      "id": "pt_70",
+      "name": "Portugal Local 60",
+      "lat": 37.1523146772526,
+      "lng": -9.040759516683423
+    },
+    {
+      "id": "pt_71",
+      "name": "Portugal Local 61",
+      "lat": 41.691654410415715,
+      "lng": -9.073017839136472
+    },
+    {
+      "id": "pt_72",
+      "name": "Portugal Local 62",
+      "lat": 41.11504069420219,
+      "lng": -9.093871197954591
+    },
+    {
+      "id": "pt_73",
+      "name": "Portugal Local 63",
+      "lat": 38.70105644997967,
+      "lng": -6.201557078829975
+    },
+    {
+      "id": "pt_74",
+      "name": "Portugal Local 64",
+      "lat": 37.02515493505548,
+      "lng": -9.189114074836807
+    },
+    {
+      "id": "pt_75",
+      "name": "Portugal Local 65",
+      "lat": 39.27410720935646,
+      "lng": -6.742003965891168
+    },
+    {
+      "id": "pt_76",
+      "name": "Portugal Local 66",
+      "lat": 38.2001528602782,
+      "lng": -8.435310369239541
+    },
+    {
+      "id": "pt_77",
+      "name": "Portugal Local 67",
+      "lat": 38.33462619436651,
+      "lng": -6.330180763750017
+    },
+    {
+      "id": "pt_78",
+      "name": "Portugal Local 68",
+      "lat": 41.917213963445064,
+      "lng": -9.332404123934692
+    },
+    {
+      "id": "pt_79",
+      "name": "Portugal Local 69",
+      "lat": 40.75677256290879,
+      "lng": -8.54861683380849
+    },
+    {
+      "id": "pt_80",
+      "name": "Portugal Local 70",
+      "lat": 37.51182091961914,
+      "lng": -6.737460220422995
+    },
+    {
+      "id": "pt_81",
+      "name": "Portugal Local 71",
+      "lat": 40.20050861733681,
+      "lng": -7.6122182919471975
+    },
+    {
+      "id": "pt_82",
+      "name": "Portugal Local 72",
+      "lat": 37.13831884502017,
+      "lng": -9.235733829446069
+    },
+    {
+      "id": "pt_83",
+      "name": "Portugal Local 73",
+      "lat": 38.884854151215144,
+      "lng": -7.251792092481418
+    },
+    {
+      "id": "pt_84",
+      "name": "Portugal Local 74",
+      "lat": 40.27791740278202,
+      "lng": -7.7233828887115665
+    },
+    {
+      "id": "pt_85",
+      "name": "Portugal Local 75",
+      "lat": 41.29981643439433,
+      "lng": -9.30982270677191
+    },
+    {
+      "id": "pt_86",
+      "name": "Portugal Local 76",
+      "lat": 38.75611779179814,
+      "lng": -7.971818197522216
+    },
+    {
+      "id": "pt_87",
+      "name": "Portugal Local 77",
+      "lat": 41.96149814497587,
+      "lng": -6.7611502270106225
+    },
+    {
+      "id": "pt_88",
+      "name": "Portugal Local 78",
+      "lat": 40.201327357362835,
+      "lng": -6.7036636550733215
+    },
+    {
+      "id": "pt_89",
+      "name": "Portugal Local 79",
+      "lat": 39.87913128359678,
+      "lng": -7.07733703254853
+    },
+    {
+      "id": "pt_90",
+      "name": "Portugal Local 80",
+      "lat": 41.88676887936789,
+      "lng": -9.207255732855755
+    },
+    {
+      "id": "pt_91",
+      "name": "Portugal Local 81",
+      "lat": 38.58093728975895,
+      "lng": -6.872997082205577
+    },
+    {
+      "id": "pt_92",
+      "name": "Portugal Local 82",
+      "lat": 40.0340603790525,
+      "lng": -7.152812084528171
+    },
+    {
+      "id": "pt_93",
+      "name": "Portugal Local 83",
+      "lat": 39.09850458110637,
+      "lng": -7.280415264483633
+    },
+    {
+      "id": "pt_94",
+      "name": "Portugal Local 84",
+      "lat": 40.361530765091366,
+      "lng": -7.641624928487079
+    },
+    {
+      "id": "pt_95",
+      "name": "Portugal Local 85",
+      "lat": 38.79383678844871,
+      "lng": -7.774608762936163
+    },
+    {
+      "id": "pt_96",
+      "name": "Portugal Local 86",
+      "lat": 39.11118414457807,
+      "lng": -7.810436204986368
+    },
+    {
+      "id": "pt_97",
+      "name": "Portugal Local 87",
+      "lat": 38.70907619124925,
+      "lng": -8.162600979015657
+    },
+    {
+      "id": "pt_98",
+      "name": "Portugal Local 88",
+      "lat": 37.03688112537849,
+      "lng": -9.307718367884924
+    },
+    {
+      "id": "pt_99",
+      "name": "Portugal Local 89",
+      "lat": 38.19145877980464,
+      "lng": -6.6557843898487175
+    }
+  ]
+}

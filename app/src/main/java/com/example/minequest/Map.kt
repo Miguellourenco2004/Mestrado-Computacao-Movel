@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Looper
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -22,10 +21,9 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
-import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.*
+import com.google.android.libraries.places.api.net.*
 import com.google.maps.android.compose.*
 
 @SuppressLint("MissingPermission")
@@ -36,8 +34,9 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
-    val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
+    val placesClient = remember { Places.createClient(context) }
 
+    // VIEWMODEL STATES
     val currentLocation by viewModel.currentLocation.collectAsState()
     val destination by viewModel.destination.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
@@ -46,28 +45,56 @@ fun MapScreen(
     val distanceText by viewModel.distanceText.collectAsState()
     val durationText by viewModel.durationText.collectAsState()
 
+    // MARKERS JSON
+    val lisboaMarkers by viewModel.lisboaMarkers.collectAsState()
+    val setubalMarkers by viewModel.setubalMarkers.collectAsState()
+    val portugalMarkers by viewModel.portugalMarkers.collectAsState()
+
     var query by remember { mutableStateOf("") }
 
-    // pegar localização inicial
+    // LOAD USER LOCATION + JSON MARKERS
     LaunchedEffect(Unit) {
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
+        viewModel.loadMarkers(context)
 
-            fused.lastLocation.addOnSuccessListener { loc ->
-                if (loc != null)
-                    viewModel.setCurrentLocation(LatLng(loc.latitude, loc.longitude))
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            fused.lastLocation.addOnSuccessListener {
+                if (it != null) {
+                    viewModel.setCurrentLocation(LatLng(it.latitude, it.longitude))
+                }
             }
         }
     }
 
-    // atualizar rota conforme te moves
+    // CAMERA STATE
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(
+            LatLng(38.736946, -9.142685), // fallback LISBOA
+            12f
+        )
+    }
+
+    // AUTO-MOVE CAMERA WHEN LOCATION LOADED
+    LaunchedEffect(currentLocation) {
+        currentLocation?.let {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(it, 16f)
+            )
+        }
+    }
+
+    // LIVE NAVIGATION UPDATES
     LaunchedEffect(navigationEnabled) {
+
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 if (!navigationEnabled) return
                 val loc = result.lastLocation ?: return
-                val pos = LatLng(loc.latitude, loc.longitude)
 
+                val pos = LatLng(loc.latitude, loc.longitude)
                 viewModel.setCurrentLocation(pos)
 
                 destination?.let { dest ->
@@ -77,25 +104,17 @@ fun MapScreen(
         }
 
         if (navigationEnabled) {
-            val request = LocationRequest.Builder(2000)
+            val req = LocationRequest.Builder(2000)
                 .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
                 .build()
 
-            fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
+            fused.requestLocationUpdates(req, callback, Looper.getMainLooper())
         } else {
             fused.removeLocationUpdates(callback)
         }
     }
 
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            currentLocation ?: LatLng(0.0, 0.0), 15f
-        )
-    }
-
-    //-------------------------------------------
-    // PESQUISAR
-    //-------------------------------------------
+    // SEARCH SUGGESTIONS
     fun sugestoes(input: String) {
         if (input.length < 3) {
             viewModel.setPredictions(emptyList())
@@ -103,12 +122,12 @@ fun MapScreen(
         }
 
         val token = AutocompleteSessionToken.newInstance()
-        val request = FindAutocompletePredictionsRequest.builder()
+        val req = FindAutocompletePredictionsRequest.builder()
             .setQuery(input)
             .setSessionToken(token)
             .build()
 
-        placesClient.findAutocompletePredictions(request)
+        placesClient.findAutocompletePredictions(req)
             .addOnSuccessListener { resp ->
                 viewModel.setPredictions(
                     resp.autocompletePredictions.map {
@@ -118,9 +137,7 @@ fun MapScreen(
             }
     }
 
-    //-------------------------------------------
-    // IR PARA LUGAR
-    //-------------------------------------------
+    // GO TO SELECTED PLACE
     fun irParaLugar(placeId: String) {
         val req = FetchPlaceRequest.newInstance(
             placeId,
@@ -128,24 +145,21 @@ fun MapScreen(
         )
 
         placesClient.fetchPlace(req)
-            .addOnSuccessListener { result ->
-                val place = result.place
-                val latLng = place.latLng ?: return@addOnSuccessListener
+            .addOnSuccessListener { res ->
+                val latLng = res.place.latLng ?: return@addOnSuccessListener
+
+                query = res.place.name ?: ""
+                viewModel.setPredictions(emptyList())
+                viewModel.setDestination(latLng)
 
                 cameraPositionState.move(
                     CameraUpdateFactory.newLatLngZoom(latLng, 17f)
                 )
 
-                query = place.name ?: ""
-                viewModel.setPredictions(emptyList())
-                viewModel.setDestination(latLng)
             }
     }
 
-    //==========================================
-    // UI
-    //==========================================
-
+    // UI MAP
     Box(modifier = Modifier.fillMaxSize()) {
 
         GoogleMap(
@@ -160,36 +174,62 @@ fun MapScreen(
             )
         ) {
 
-            // marcador atual
+            // USER MARKER
             currentLocation?.let {
-                Marker(state = MarkerState(it), title = "Você está aqui!")
+                Marker(
+                    state = MarkerState(it),
+                    title = "Você está aqui!"
+                )
             }
 
-            // marcador destino
+            // DESTINATION MARKER (IMPORTANT!)
             destination?.let {
-                Marker(state = MarkerState(it), title = "Destino")
+                Marker(
+                    state = MarkerState(it),
+                    title = "Destino"
+                )
             }
 
-            // rota
+            // ROUTE POLYLINE
             if (routePoints.isNotEmpty()) {
                 Polyline(
                     points = routePoints,
                     width = 20f,
-                    color = Color.Red,
-                    zIndex = 10f
+                    color = Color.Red
+                )
+            }
+
+            // MARKERS FROM JSON
+            lisboaMarkers.forEach {
+                Marker(
+                    state = MarkerState(LatLng(it.lat, it.lng)),
+                    title = it.name
+                )
+            }
+
+            setubalMarkers.forEach {
+                Marker(
+                    state = MarkerState(LatLng(it.lat, it.lng)),
+                    title = it.name
+                )
+            }
+
+            portugalMarkers.forEach {
+                Marker(
+                    state = MarkerState(LatLng(it.lat, it.lng)),
+                    title = it.name
                 )
             }
         }
 
-        //------------------------------------------------------------
-        // BARRA DE PESQUISA
-        //------------------------------------------------------------
+        // SEARCH BAR
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 24.dp)
+                .padding(20.dp)
                 .fillMaxWidth(0.9f)
         ) {
+
             OutlinedTextField(
                 value = query,
                 onValueChange = {
@@ -200,47 +240,39 @@ fun MapScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White, RoundedCornerShape(50.dp)),
-                shape = RoundedCornerShape(50.dp),
                 singleLine = true
             )
 
-            predictions.forEach { (placeId, text) ->
+            predictions.forEach { (id, desc) ->
                 TextButton(
-                    onClick = { irParaLugar(placeId) },
+                    onClick = { irParaLugar(id) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text, color = Color.Black)
+                    Text(desc, color = Color.Black)
                 }
             }
         }
 
-        //------------------------------------------------------------
-        // DISTÂNCIA E TEMPO
-        //------------------------------------------------------------
-        if (distanceText != null && durationText != null && navigationEnabled) {
+        // DISTANCE + TIME PANEL
+        if (navigationEnabled && distanceText != null && durationText != null) {
             Card(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 100.dp)
                     .fillMaxWidth(0.8f),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Distância restante: $distanceText", color = Color.Black)
-                    Text("Tempo estimado: $durationText", color = Color.Gray)
+                    Text("Distância: $distanceText")
+                    Text("Tempo estimado: $durationText")
                 }
             }
         }
 
-        //------------------------------------------------------------
-        // BOTÕES NAVEGAÇÃO
-        //------------------------------------------------------------
-
-        // iniciar viagem
+        // START NAV
         if (destination != null && !navigationEnabled) {
             Button(
                 modifier = Modifier
@@ -259,14 +291,16 @@ fun MapScreen(
             }
         }
 
-        // cancelar viagem
+        // CANCEL NAVIGATION
         if (navigationEnabled) {
             Button(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                onClick = { viewModel.stopNavigation() }
+                onClick = {
+                    viewModel.stopNavigation()
+                }
             ) {
                 Text("Cancelar viagem")
             }
