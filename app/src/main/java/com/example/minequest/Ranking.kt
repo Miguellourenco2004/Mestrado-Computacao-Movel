@@ -93,7 +93,7 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
 
 
 // Definir cores customizadas (ajuste conforme necessário)
-val MineQuestGreen = Color(0xFF6AA84F) // Verde do fundo (ex: #6AA84F)
+val MineQuestGreen = Color(0xFF388E3C) // Verde do fundo (ex: #6AA84F)
 val ItemBackground = Color(0xFFFFFFFF) // Fundo dos itens (branco)
 val XPTextColor = Color(0xFFFF9900)    // Cor do XP (ex: #FF9900)
 

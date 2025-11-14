@@ -67,7 +67,7 @@ fun MineBlock(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MineGreen)
+            .background(MineDarkGreen)
     ) {
         Column(
             modifier = Modifier
@@ -91,7 +91,6 @@ fun MineBlock(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(MineGreen, shape = RoundedCornerShape(16.dp))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -100,7 +99,7 @@ fun MineBlock(
                         .fillMaxWidth(0.8f) // Mantém a largura do botão antigo
                         .height(70.dp)      // Mantém a altura
                         .padding(vertical = 8.dp) // Mantém o padding
-                        .background( // Fundo cinzento-escuro igual ao da Row
+                        .background( //
                             color = Color(0xFF323232),
                             shape = RoundedCornerShape(16.dp) // Cantos arredondados
                         )
