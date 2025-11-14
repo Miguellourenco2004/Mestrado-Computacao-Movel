@@ -124,16 +124,19 @@ fun RankingItem(
                 Row {
                     Text(
                         text = "$rank. ",
+                        fontFamily = MineQuestFont,
                         style = MaterialTheme.typography.bodyLarge
                     )
                     Text(
                         text = username,
+                        fontFamily = MineQuestFont,
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
 
                 Text(
                     text = "$pontosXP XP",
+                    fontFamily = MineQuestFont,
                     color = XPTextColor,
                     style = MaterialTheme.typography.bodyLarge
                 )
