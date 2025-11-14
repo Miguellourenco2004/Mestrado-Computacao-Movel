@@ -197,6 +197,7 @@ fun MineBlock(
                     Text(
                         text = errorMessage!!,
                         color = Color.Red,
+                        fontFamily = MineQuestFont,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
