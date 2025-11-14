@@ -137,13 +137,13 @@ fun MineBlock(
                                 maxIndex = listaPicaretas.size - 1
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = MineDarkGreen),
+                        colors = ButtonDefaults.buttonColors(Color(0xFF323232)),
                         shape = RoundedCornerShape(40.dp),
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .height(70.dp)
                             .padding(vertical = 8.dp)
-                            .border( // Borda castanha igual ao da Row
+                            .border(
                                 width = 2.dp,
                                 color = Color(0xFF6B3B25),
                                 shape = RoundedCornerShape(40.dp)
