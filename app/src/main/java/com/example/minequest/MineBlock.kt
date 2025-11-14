@@ -189,13 +189,11 @@ fun MineBlock(
                             painter = painterResource(id = R.drawable.steve),
                             contentDescription = "Max Level",
                             modifier = Modifier
-                                .size(175.dp), // Ajuste o tamanho como preferir
+                                .size(175.dp),
                             contentScale = ContentScale.Fit
                         )
                     }
                 }
-
-                // Mostra a mensagem de erro vinda do ViewModel
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage!!,
@@ -247,7 +245,7 @@ fun MineBlock(
                                 Spacer(
                                     modifier = Modifier
                                         .height(2.dp) // Altura do underline
-                                        .width(40.dp)  // Largura (podes pôr 40.dp se quiseres)
+                                        .width(40.dp)  // Largura
                                         .background(
                                             color = if (index == indiceAtual) Color.White else Color.Transparent
                                         )
