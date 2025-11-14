@@ -1,0 +1,117 @@
+package com.example.minequest
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.PolyUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONObject
+
+class MapViewModel : ViewModel() {
+
+    // LOCALIZAÇÃO ATUAL
+    private val _currentLocation = MutableStateFlow<LatLng?>(null)
+    val currentLocation = _currentLocation.asStateFlow()
+
+    fun setCurrentLocation(latLng: LatLng) {
+        _currentLocation.value = latLng
+    }
+
+    // DESTINO
+    private val _destination = MutableStateFlow<LatLng?>(null)
+    val destination = _destination.asStateFlow()
+
+    fun setDestination(latLng: LatLng?) {
+        _destination.value = latLng
+    }
+
+    // SUGESTÕES
+    private val _predictions = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+    val predictions = _predictions.asStateFlow()
+
+    fun setPredictions(list: List<Pair<String, String>>) {
+        _predictions.value = list
+    }
+
+    // ROTA
+    private val _routePoints = MutableStateFlow<List<LatLng>>(emptyList())
+    val routePoints = _routePoints.asStateFlow()
+
+    // DISTÂNCIA
+    private val _distanceText = MutableStateFlow<String?>(null)
+    val distanceText = _distanceText.asStateFlow()
+
+    // DURAÇÃO
+    private val _durationText = MutableStateFlow<String?>(null)
+    val durationText = _durationText.asStateFlow()
+
+    // NAVEGAÇÃO ATIVA
+    private val _navigationEnabled = MutableStateFlow(false)
+    val navigationEnabled = _navigationEnabled.asStateFlow()
+
+    fun startNavigation() {
+        _navigationEnabled.value = true
+    }
+
+    fun stopNavigation() {
+        _navigationEnabled.value = false
+        _routePoints.value = emptyList()
+        _distanceText.value = null
+        _durationText.value = null
+        _destination.value = null
+    }
+
+    // === DIRECTIONS API ===
+    fun buscarRota(origem: LatLng, destino: LatLng) {
+        viewModelScope.launch {
+            val url =
+                "https://maps.googleapis.com/maps/api/directions/json" +
+                        "?origin=${origem.latitude},${origem.longitude}" +
+                        "&destination=${destino.latitude},${destino.longitude}" +
+                        "&key=AIzaSyDopLW7DqJf2wQG97_iiOuEKpYWj__arpo"
+
+            val request = Request.Builder().url(url).build()
+            val client = OkHttpClient()
+
+            val response = withContext(Dispatchers.IO) {
+                client.newCall(request).execute()
+            }
+
+            val body = response.body?.string() ?: return@launch
+            val json = JSONObject(body)
+
+            val status = json.getString("status")
+            println("DIRECTIONS STATUS = $status")
+
+            val routes = json.getJSONArray("routes")
+            if (routes.length() == 0) return@launch
+
+            val route = routes.getJSONObject(0)
+
+            // PEGAR DISTÂNCIA E TEMPO
+            val leg = route.getJSONArray("legs").getJSONObject(0)
+
+            val distanceObj = leg.getJSONObject("distance")
+            val durationObj = leg.getJSONObject("duration")
+
+            _distanceText.value = distanceObj.getString("text")
+            _durationText.value = durationObj.getString("text")
+
+            // POLYLINE
+            val polyline = route
+                .getJSONObject("overview_polyline")
+                .getString("points")
+
+            val decoded = PolyUtil.decode(polyline)
+            println("POLYLINE SIZE = ${decoded.size}")
+
+            _routePoints.value = decoded
+        }
+    }
+}

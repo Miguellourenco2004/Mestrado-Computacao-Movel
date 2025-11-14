@@ -186,7 +186,7 @@ fun MineBlock(
                         Spacer(modifier = Modifier.height(20.dp))
 
                         Image(
-                            painter = painterResource(id = R.drawable.steve),
+                            painter = painterResource(id = R.drawable.big_villager_face),
                             contentDescription = "Max Level",
                             modifier = Modifier
                                 .size(175.dp), // Ajuste o tamanho como preferir

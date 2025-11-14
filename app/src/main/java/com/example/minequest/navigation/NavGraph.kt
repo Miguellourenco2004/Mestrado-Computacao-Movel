@@ -5,7 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.composable
 import com.example.minequest.Chat
 import com.example.minequest.LoginScreen
-import com.example.minequest.Map
+import com.example.minequest.MapScreen
+
 import com.example.minequest.MineBlock
 import com.example.minequest.Profile
 import com.example.minequest.Ranking
@@ -20,7 +21,7 @@ fun NavGraph(navController: NavHostController, startDestination: String,  curren
         startDestination = startDestination
     ) {
         composable(route = Screens.Map.route) {
-            Map(navController = navController)
+            MapScreen(navController = navController)
         }
 
         composable(route = Screens.Chat.route) {

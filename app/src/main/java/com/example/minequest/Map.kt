@@ -3,6 +3,7 @@ package com.example.minequest
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.os.Looper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -16,7 +17,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -25,51 +26,79 @@ import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
-import com.google.android.libraries.places.api.net.PlacesClient
 import com.google.maps.android.compose.*
 
 @SuppressLint("MissingPermission")
 @Composable
-fun Map(navController: NavController, modifier: Modifier = Modifier) {
+fun MapScreen(
+    navController: NavController,
+    viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
     val context = LocalContext.current
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-    val placesClient: PlacesClient = remember {
-        com.google.android.libraries.places.api.Places.createClient(context)
-    }
+    val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val placesClient = remember { com.google.android.libraries.places.api.Places.createClient(context) }
 
-
-    var currentLocation by remember { mutableStateOf<LatLng?>(null) }
-
+    val currentLocation by viewModel.currentLocation.collectAsState()
+    val destination by viewModel.destination.collectAsState()
+    val routePoints by viewModel.routePoints.collectAsState()
+    val predictions by viewModel.predictions.collectAsState()
+    val navigationEnabled by viewModel.navigationEnabled.collectAsState()
+    val distanceText by viewModel.distanceText.collectAsState()
+    val durationText by viewModel.durationText.collectAsState()
 
     var query by remember { mutableStateOf("") }
-    var predictions by remember { mutableStateOf(listOf<Pair<String, String>>()) } // (placeId, description)
 
-
+    // pegar localização inicial
     LaunchedEffect(Unit) {
-        if (
-            ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-                location?.let {
-                    currentLocation = LatLng(it.latitude, it.longitude)
-                }
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED) {
+
+            fused.lastLocation.addOnSuccessListener { loc ->
+                if (loc != null)
+                    viewModel.setCurrentLocation(LatLng(loc.latitude, loc.longitude))
             }
         }
     }
 
+    // atualizar rota conforme te moves
+    LaunchedEffect(navigationEnabled) {
+        val callback = object : LocationCallback() {
+            override fun onLocationResult(result: LocationResult) {
+                if (!navigationEnabled) return
+                val loc = result.lastLocation ?: return
+                val pos = LatLng(loc.latitude, loc.longitude)
+
+                viewModel.setCurrentLocation(pos)
+
+                destination?.let { dest ->
+                    viewModel.buscarRota(pos, dest)
+                }
+            }
+        }
+
+        if (navigationEnabled) {
+            val request = LocationRequest.Builder(2000)
+                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                .build()
+
+            fused.requestLocationUpdates(request, callback, Looper.getMainLooper())
+        } else {
+            fused.removeLocationUpdates(callback)
+        }
+    }
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(
-            currentLocation ?: LatLng(0.0, 0.0),
-            if (currentLocation != null) 15f else 1f
+            currentLocation ?: LatLng(0.0, 0.0), 15f
         )
     }
 
-
+    //-------------------------------------------
+    // PESQUISAR
+    //-------------------------------------------
     fun sugestoes(input: String) {
         if (input.length < 3) {
-            predictions = emptyList()
+            viewModel.setPredictions(emptyList())
             return
         }
 
@@ -80,70 +109,81 @@ fun Map(navController: NavController, modifier: Modifier = Modifier) {
             .build()
 
         placesClient.findAutocompletePredictions(request)
-            .addOnSuccessListener { response ->
-                predictions = response.autocompletePredictions.map {
-                    it.placeId to it.getFullText(null).toString()
-                }
-            }
-            .addOnFailureListener {
-                predictions = emptyList()
+            .addOnSuccessListener { resp ->
+                viewModel.setPredictions(
+                    resp.autocompletePredictions.map {
+                        it.placeId to it.getFullText(null).toString()
+                    }
+                )
             }
     }
 
-
+    //-------------------------------------------
+    // IR PARA LUGAR
+    //-------------------------------------------
     fun irParaLugar(placeId: String) {
-        val placeRequest = FetchPlaceRequest.newInstance(
+        val req = FetchPlaceRequest.newInstance(
             placeId,
             listOf(Place.Field.LAT_LNG, Place.Field.NAME)
         )
 
-        placesClient.fetchPlace(placeRequest)
+        placesClient.fetchPlace(req)
             .addOnSuccessListener { result ->
                 val place = result.place
-                place.latLng?.let { latLng ->
-                    cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-                    currentLocation = latLng
-                    query = place.name ?: ""
-                    predictions = emptyList()
-                }
+                val latLng = place.latLng ?: return@addOnSuccessListener
+
+                cameraPositionState.move(
+                    CameraUpdateFactory.newLatLngZoom(latLng, 17f)
+                )
+
+                query = place.name ?: ""
+                viewModel.setPredictions(emptyList())
+                viewModel.setDestination(latLng)
             }
     }
 
+    //==========================================
+    // UI
+    //==========================================
+
     Box(modifier = Modifier.fillMaxSize()) {
 
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .border(
-                    width = 10.dp,
-                    color = Color(0xFF6FBF4B),
-                    shape = RoundedCornerShape(0.dp)
-                )
-                .padding(8.dp)
-        ) {
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
-                cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    isMyLocationEnabled = currentLocation != null,
-                    mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
-                        context,
-                        R.raw.minecraft_style // 👈 referência ao JSON
-                    )
+        GoogleMap(
+            modifier = Modifier.fillMaxSize(),
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(
+                isMyLocationEnabled = currentLocation != null,
+                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
+                    context,
+                    R.raw.minecraft_style
                 )
             )
-            {
-                currentLocation?.let {
-                    Marker(
-                        state = MarkerState(position = it),
-                        title = "Você está aqui!"
-                    )
-                }
+        ) {
+
+            // marcador atual
+            currentLocation?.let {
+                Marker(state = MarkerState(it), title = "Você está aqui!")
+            }
+
+            // marcador destino
+            destination?.let {
+                Marker(state = MarkerState(it), title = "Destino")
+            }
+
+            // rota
+            if (routePoints.isNotEmpty()) {
+                Polyline(
+                    points = routePoints,
+                    width = 20f,
+                    color = Color.Red,
+                    zIndex = 10f
+                )
             }
         }
 
-        // --- BARRA DE PESQUISA ---
+        //------------------------------------------------------------
+        // BARRA DE PESQUISA
+        //------------------------------------------------------------
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -156,33 +196,79 @@ fun Map(navController: NavController, modifier: Modifier = Modifier) {
                     query = it
                     sugestoes(it)
                 },
-                placeholder = { Text("Pesquisar aqui") },
+                placeholder = { Text("Pesquisar aqui...") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(50.dp))
-                    .padding(2.dp),
+                    .background(Color.White, RoundedCornerShape(50.dp)),
                 shape = RoundedCornerShape(50.dp),
-                singleLine = true,
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = Color(0xFF6FBF4B),
-                    unfocusedIndicatorColor = Color.Gray,
-                    cursorColor = Color(0xFF6FBF4B),
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black
-                )
-
+                singleLine = true
             )
 
-
-            predictions.forEach { (placeId, description) ->
+            predictions.forEach { (placeId, text) ->
                 TextButton(
                     onClick = { irParaLugar(placeId) },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(description, color = Color.Black)
+                    Text(text, color = Color.Black)
                 }
+            }
+        }
+
+        //------------------------------------------------------------
+        // DISTÂNCIA E TEMPO
+        //------------------------------------------------------------
+        if (distanceText != null && durationText != null && navigationEnabled) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 100.dp)
+                    .fillMaxWidth(0.8f),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Distância restante: $distanceText", color = Color.Black)
+                    Text("Tempo estimado: $durationText", color = Color.Gray)
+                }
+            }
+        }
+
+        //------------------------------------------------------------
+        // BOTÕES NAVEGAÇÃO
+        //------------------------------------------------------------
+
+        // iniciar viagem
+        if (destination != null && !navigationEnabled) {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                onClick = {
+                    viewModel.startNavigation()
+                    currentLocation?.let { origem ->
+                        destination?.let { dest ->
+                            viewModel.buscarRota(origem, dest)
+                        }
+                    }
+                }
+            ) {
+                Text("Ir para destino")
+            }
+        }
+
+        // cancelar viagem
+        if (navigationEnabled) {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                onClick = { viewModel.stopNavigation() }
+            ) {
+                Text("Cancelar viagem")
             }
         }
     }
