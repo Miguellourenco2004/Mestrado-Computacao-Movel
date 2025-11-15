@@ -1,5 +1,11 @@
 package com.example.minequest
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +70,17 @@ fun MineBlock(
     val proximaPicareta = listaPicaretas.getOrNull(indiceAtual + 1)
     val custoProximoUpgrade = proximaPicareta?.custo ?: 0
 
+    val infiniteTransition = rememberInfiniteTransition(label = "PickaxeWobble")
+
+    val rotationAngle by infiniteTransition.animateFloat(
+        initialValue = -15f, // Começa -15 graus (inclinada para a esquerda)
+        targetValue = 15f,   // Vai até 15 graus (inclinada para a direita)
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 800, easing = LinearEasing), // Duração de 0.8s
+            repeatMode = RepeatMode.Reverse // Faz a animação reverter (ir e voltar)
+        ),
+        label = "PickaxeRotation"
+    )
 
     Box(
         modifier = Modifier
@@ -124,7 +142,11 @@ fun MineBlock(
                 Image(
                     painter = painterResource(id = picaretaAtual.imagemRes),
                     contentDescription = picaretaAtual.nome,
-                    modifier = Modifier.size(150.dp)
+                    modifier = Modifier
+                        .size(150.dp)
+                        .graphicsLayer {
+                            rotationZ = rotationAngle
+                        }
                 )
 
                 if (proximaPicareta != null) {
