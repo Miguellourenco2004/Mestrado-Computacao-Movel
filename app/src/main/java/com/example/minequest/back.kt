@@ -14,6 +14,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+
 class MapViewModel : ViewModel() {
 
     // LOCALIZAÇÃO ATUAL
@@ -153,5 +159,7 @@ class MapViewModel : ViewModel() {
         _setubalMarkers.value = parseArray("setubal")
         _portugalMarkers.value = parseArray("portugal")
     }
+
+
 
 }
