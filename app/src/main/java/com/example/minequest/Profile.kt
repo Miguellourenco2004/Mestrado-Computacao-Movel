@@ -160,6 +160,7 @@ fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier) {
                     text = slot.quantity.toString() + "x",
                     color = Color.White,
                     fontSize = 14.sp,
+                    fontFamily = MineQuestFont,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .background(Color.Black.copy(alpha = 0.6f))

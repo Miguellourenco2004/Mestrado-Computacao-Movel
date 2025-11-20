@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.example.minequest.navigation.Screens
+import com.example.minequest.ui.theme.MineQuestFont
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -29,13 +30,13 @@ fun LoginScreen(navController: NavController) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Login", style = MaterialTheme.typography.headlineMedium)
+            Text("Login", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont)
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text("Email", fontFamily = MineQuestFont) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -45,7 +46,7 @@ fun LoginScreen(navController: NavController) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text("Password", fontFamily = MineQuestFont) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
@@ -71,13 +72,13 @@ fun LoginScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Entrar")
+                Text("Login", fontFamily = MineQuestFont)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate(Screens.Register.route) }) {
-                Text("Não tens conta? Regista-te")
+                Text("Não tens conta? Regista-te", fontFamily = MineQuestFont)
             }
 
             if (loading) {

@@ -11,6 +11,7 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.minequest.navigation.Screens
+import com.example.minequest.ui.theme.MineQuestFont
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -31,13 +32,13 @@ fun RegisterScreen(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Create Account", style = MaterialTheme.typography.headlineMedium)
+            Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont)
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username") },
+                label = { Text("Username", fontFamily = MineQuestFont,) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -47,7 +48,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email") },
+                label = { Text("Email", fontFamily = MineQuestFont) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -57,7 +58,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password") },
+                label = { Text("Password", fontFamily = MineQuestFont) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
@@ -68,7 +69,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password") },
+                label = { Text("Confirm Password", fontFamily = MineQuestFont) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth()
@@ -124,7 +125,7 @@ fun RegisterScreen(navController: NavController) {
                                         database.child(userId).setValue(userData)
                                             .addOnSuccessListener {
                                                 loading = false
-                                                // Go to the main screen
+                                                // Navegar para a tela principal
                                                 navController.navigate(Screens.Map.route) {
                                                     popUpTo(Screens.Register.route) { inclusive = true }
                                                 }
@@ -147,13 +148,13 @@ fun RegisterScreen(navController: NavController) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Register")
+                Text("Register", fontFamily = MineQuestFont)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate(Screens.Login.route) }) {
-                Text("Already have an account? Log in")
+                Text("Already have an account? Log in", fontFamily = MineQuestFont)
             }
 
             if (loading) {
