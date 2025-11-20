@@ -14,15 +14,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import androidx.core.content.ContextCompat
-import com.google.android.gms.maps.model.BitmapDescriptor
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-
 class MapViewModel : ViewModel() {
 
-    // LOCALIZAÇÃO ATUAL
 
     private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
     val lisboaMarkers = _lisboaMarkers.asStateFlow()
@@ -85,7 +78,7 @@ class MapViewModel : ViewModel() {
     }
 
     // === DIRECTIONS API ===
-    fun buscarRota(origem: LatLng, destino: LatLng) {
+    fun Rota(origem: LatLng, destino: LatLng) {
         viewModelScope.launch {
             val url =
                 "https://maps.googleapis.com/maps/api/directions/json" +

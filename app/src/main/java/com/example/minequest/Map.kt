@@ -41,7 +41,7 @@ fun MapScreen(
 
     val context = LocalContext.current
 
-    // Nome da imagem do utilizador carregada do Firebase
+    // Foto do utilizador guardada na BD
     var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
 
     // Carregar foto do utilizador do Firebase
@@ -51,27 +51,26 @@ fun MapScreen(
 
         auth.currentUser?.let { user ->
             db.child(user.uid).get()
-                .addOnSuccessListener { snapshot ->
-                    profileImageName = snapshot.child("profileImage")
-                        .getValue(String::class.java)
+                .addOnSuccessListener { snap ->
+                    profileImageName = snap.child("profileImage").getValue(String::class.java)
                         ?: "minecraft_creeper_face"
                 }
         }
     }
 
-    // Lista de ícones possíveis para markers aleatórios do mapa
+    // Lista de ícones possíveis para markers
     val markerIcons = listOf(
         R.drawable.arvore, R.drawable.calhao, R.drawable.casas,
         R.drawable.casass, R.drawable.castelo, R.drawable.coiso, R.drawable.fogo
     )
 
-    // Cache para garantir que cada marker mantém a mesma imagem aleatória
+    // Cache para garantir imagem fixa em cada marker
     val markerIconCache = remember { mutableStateMapOf<String, Int>() }
 
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
     val placesClient = remember { Places.createClient(context) }
 
-    // Estados do ViewModel
+    // Estados vindos do ViewModel
     val currentLocation by viewModel.currentLocation.collectAsState()
     val destination by viewModel.destination.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
@@ -86,14 +85,12 @@ fun MapScreen(
 
     var query by remember { mutableStateOf("") }
 
-    // Carregar markers e localização inicial
+    // Carregar markers + localização inicial
     LaunchedEffect(Unit) {
         viewModel.loadMarkers(context)
 
-        if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED
         ) {
             fused.lastLocation.addOnSuccessListener {
                 if (it != null) {
@@ -103,83 +100,69 @@ fun MapScreen(
         }
     }
 
-    fun getIconForMarker(id: String): Int {
-        return markerIconCache.getOrPut(id) { markerIcons.random() }
-    }
+    // Seleciona imagem aleatória mas fixa para cada marker
+    fun getIconForMarker(id: String): Int =
+        markerIconCache.getOrPut(id) { markerIcons.random() }
 
-    // Estado inicial da câmara
+
+
+    // ---------------------------
+    // CÂMARA DO MAPA
+    // ---------------------------
+
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(
-            LatLng(38.736946, -9.142685),
-            12f
-        )
+        position = CameraPosition.fromLatLngZoom(LatLng(38.736946, -9.142685), 12f)
     }
 
-    // Quando a localização muda, mover câmara
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
-            cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(it, 16f)
-            )
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 16f))
         }
     }
 
 
-    // --------------------
-    // Funções de Bitmap
-    // --------------------
+
+    // ---------------------------
+    // BITMAPS PARA MARCADORES
+    // ---------------------------
 
     val markerBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
     val userBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
 
-    // Marker grande (96dp)
+    // Marker do mapa (grande)
     fun bitmapDescriptorMarker(context: Context, resId: Int): BitmapDescriptor {
         val drawable = ContextCompat.getDrawable(context, resId)
             ?: return BitmapDescriptorFactory.defaultMarker()
 
-        val sizeDp = 96
-        val scale = context.resources.displayMetrics.density
-        val sizePx = (sizeDp * scale).toInt()
+        val px = (96 * context.resources.displayMetrics.density).toInt()
 
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        drawable.setBounds(0, 0, sizePx, sizePx)
-        drawable.draw(canvas)
-
-        return BitmapDescriptorFactory.fromBitmap(bitmap)
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, px, px)
+        drawable.draw(Canvas(bmp))
+        return BitmapDescriptorFactory.fromBitmap(bmp)
     }
 
-    // Foto do utilizador pequena (48dp)
+    // Foto do utilizador (pequena)
     fun bitmapDescriptorUser(context: Context, resId: Int): BitmapDescriptor {
         val drawable = ContextCompat.getDrawable(context, resId)
             ?: return BitmapDescriptorFactory.defaultMarker()
 
-        val sizeDp = 48
-        val scale = context.resources.displayMetrics.density
-        val sizePx = (sizeDp * scale).toInt()
+        val px = (48 * context.resources.displayMetrics.density).toInt()
 
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        drawable.setBounds(0, 0, sizePx, sizePx)
-        drawable.draw(canvas)
-
-        return BitmapDescriptorFactory.fromBitmap(bitmap)
+        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        drawable.setBounds(0, 0, px, px)
+        drawable.draw(Canvas(bmp))
+        return BitmapDescriptorFactory.fromBitmap(bmp)
     }
 
-    fun getMarkerBitmap(resId: Int): BitmapDescriptor {
-        return markerBitmapCache.getOrPut(resId) {
-            bitmapDescriptorMarker(context, resId)
-        }
-    }
+    fun getMarkerBitmap(resId: Int) =
+        markerBitmapCache.getOrPut(resId) { bitmapDescriptorMarker(context, resId) }
 
-    fun getUserBitmap(resId: Int): BitmapDescriptor {
-        return userBitmapCache.getOrPut(resId) {
-            bitmapDescriptorUser(context, resId)
-        }
-    }
+    fun getUserBitmap(resId: Int) =
+        userBitmapCache.getOrPut(resId) { bitmapDescriptorUser(context, resId) }
 
+
+    // Imagem correta do utilizador
     fun getUserImage(name: String): Int {
         return when (name) {
             "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
@@ -195,95 +178,321 @@ fun MapScreen(
 
     val userIconRes = getUserImage(profileImageName)
 
-    // Atualização da localização em tempo real
+
+
+    // ---------------------------
+    // ATUALIZAÇÃO DE LOCALIZAÇÃO
+    // ---------------------------
+
     LaunchedEffect(navigationEnabled) {
 
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
-                val pos = LatLng(loc.latitude, loc.longitude)
-                viewModel.setCurrentLocation(pos)
+                viewModel.setCurrentLocation(LatLng(loc.latitude, loc.longitude))
             }
         }
 
-        val req = LocationRequest.Builder(2000)
-            .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-            .build()
-
-        fused.requestLocationUpdates(req, callback, Looper.getMainLooper())
+        fused.requestLocationUpdates(
+            LocationRequest.Builder(2000).setPriority(Priority.PRIORITY_HIGH_ACCURACY).build(),
+            callback,
+            Looper.getMainLooper()
+        )
     }
 
-    // -------------------------
-    // MAPA
-    // -------------------------
 
-    Box(modifier = Modifier.fillMaxSize()) {
+
+    // ---------------------------
+    // FUNÇÃO addMarker (CORRIGIDA)
+    // ---------------------------
+
+    @Composable
+    fun AddMarkerComposable(
+        m: MapMarker,
+        getMarkerBitmap: (Int) -> BitmapDescriptor,
+        getIconForMarker: (String) -> Int,
+        cameraPositionState: CameraPositionState,
+        navigationEnabled: Boolean,
+        currentLocation: LatLng?,
+        viewModel: MapViewModel
+    ) {
+        val pos = LatLng(m.lat, m.lng)
+
+        Marker(
+            state = MarkerState(pos),
+            title = null,
+            icon = getMarkerBitmap(getIconForMarker(m.id)),
+            onClick = {
+                viewModel.setDestination(pos)
+
+                cameraPositionState.move(
+                    CameraUpdateFactory.newLatLngZoom(pos, 17f)
+                )
+
+                currentLocation?.let { origem ->
+                    if (navigationEnabled) viewModel.Rota(origem, pos)
+                }
+
+                true // Impede infoWindows e o pin vermelho
+            }
+        )
+    }
+
+
+    // ---------------------------
+    // MAPA
+    // ---------------------------
+
+    Box(Modifier.fillMaxSize()) {
 
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
-                isMyLocationEnabled = false, // desativar ponto azul
-                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(
-                    context,
-                    R.raw.minecraft_style
-                )
+                isMyLocationEnabled = false,
+                mapStyleOptions = MapStyleOptions.loadRawResourceStyle(context, R.raw.minecraft_style)
             )
         ) {
 
-            // Foto do utilizador como marker que segue a localização
+            // Mostrar posição do utilizador
             currentLocation?.let { pos ->
                 Marker(
                     state = MarkerState(pos),
-                    title = "TU",
+                    title = "Tu",
                     icon = getUserBitmap(userIconRes),
                     anchor = Offset(0.5f, 0.5f)
                 )
             }
 
             // Destino
-            destination?.let {
+            destination?.let { dest ->
                 Marker(
-                    state = MarkerState(it),
-                    title = "Destino"
+                    state = MarkerState(dest),
+                    title = null,
+
+
+                    icon = BitmapDescriptorFactory.fromBitmap(
+                        Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+                    ),
+
+                    onClick = { true }
                 )
             }
 
-            // Rota
+
+            // Linha da rota
             if (routePoints.isNotEmpty()) {
                 Polyline(
                     points = routePoints,
-                    width = 20f,
+                    width = 16f,
                     color = Color.Red
                 )
             }
 
-            // Markers de Lisboa
+            // Markers do JSON
             lisboaMarkers.forEach { m ->
-                Marker(
-                    state = MarkerState(LatLng(m.lat, m.lng)),
-                    title = m.name,
-                    icon = getMarkerBitmap(getIconForMarker(m.id))
+                AddMarkerComposable(
+                    m = m,
+                    getMarkerBitmap = { getMarkerBitmap(it) },
+                    getIconForMarker = { getIconForMarker(it) },
+                    cameraPositionState = cameraPositionState,
+                    navigationEnabled = navigationEnabled,
+                    currentLocation = currentLocation,
+                    viewModel = viewModel
                 )
             }
 
-            // Markers de Setúbal
             setubalMarkers.forEach { m ->
-                Marker(
-                    state = MarkerState(LatLng(m.lat, m.lng)),
-                    title = m.name,
-                    icon = getMarkerBitmap(getIconForMarker(m.id))
+                AddMarkerComposable(
+                    m = m,
+                    getMarkerBitmap = { getMarkerBitmap(it) },
+                    getIconForMarker = { getIconForMarker(it) },
+                    cameraPositionState = cameraPositionState,
+                    navigationEnabled = navigationEnabled,
+                    currentLocation = currentLocation,
+                    viewModel = viewModel
                 )
             }
 
-            // Markers de Portugal
             portugalMarkers.forEach { m ->
-                Marker(
-                    state = MarkerState(LatLng(m.lat, m.lng)),
-                    title = m.name,
-                    icon = getMarkerBitmap(getIconForMarker(m.id))
+                AddMarkerComposable(
+                    m = m,
+                    getMarkerBitmap = { getMarkerBitmap(it) },
+                    getIconForMarker = { getIconForMarker(it) },
+                    cameraPositionState = cameraPositionState,
+                    navigationEnabled = navigationEnabled,
+                    currentLocation = currentLocation,
+                    viewModel = viewModel
                 )
+            }
+
+        }
+
+
+
+        // ---------------------------
+        // BARRA DE PESQUISA
+        // ---------------------------
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(20.dp)
+                .fillMaxWidth(0.9f)
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = {
+                    query = it
+                    sugestoes(it, placesClient, viewModel)
+                },
+                placeholder = { Text("Pesquisar aqui...") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(40.dp)),
+                singleLine = true
+            )
+
+            predictions.forEach { (id, desc) ->
+                TextButton(
+                    onClick = {
+                        irParaLugar(
+                            placeId = id,
+                            placesClient = placesClient,
+                            cameraPositionState = cameraPositionState,
+                            viewModel = viewModel,
+                            querySetter = { query = it }
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(desc, color = Color.Black)
+                }
+            }
+        }
+
+
+
+        // ---------------------------
+        // PAINEL DE DISTÂNCIA/TEMPO
+        // ---------------------------
+
+        if (navigationEnabled && distanceText != null && durationText != null) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 90.dp)
+                    .fillMaxWidth(0.8f),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Distância: $distanceText")
+                    Text("Tempo estimado: $durationText")
+                }
+            }
+        }
+
+
+
+        // ---------------------------
+        // BOTÃO "IR PARA DESTINO"
+        // ---------------------------
+
+        if (destination != null && !navigationEnabled) {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                onClick = {
+                    viewModel.startNavigation()
+                    currentLocation?.let { origem ->
+                        destination?.let { dest ->
+                            viewModel.Rota(origem, dest)
+                        }
+                    }
+                }
+            ) {
+                Text("Ir para destino")
+            }
+        }
+
+
+
+        // ---------------------------
+        // BOTÃO "CANCELAR VIAGEM"
+        // ---------------------------
+
+        if (navigationEnabled) {
+            Button(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                onClick = { viewModel.stopNavigation() }
+            ) {
+                Text("Cancelar viagem")
             }
         }
     }
+}
+
+
+
+// ---------------------------
+// FUNÇÕES AUXILIARES
+// ---------------------------
+
+fun sugestoes(
+    input: String,
+    placesClient: PlacesClient,
+    viewModel: MapViewModel
+) {
+    if (input.length < 3) {
+        viewModel.setPredictions(emptyList())
+        return
+    }
+
+    val token = AutocompleteSessionToken.newInstance()
+    val req = FindAutocompletePredictionsRequest.builder()
+        .setQuery(input)
+        .setSessionToken(token)
+        .build()
+
+    placesClient.findAutocompletePredictions(req)
+        .addOnSuccessListener { resp ->
+            viewModel.setPredictions(
+                resp.autocompletePredictions.map {
+                    it.placeId to it.getFullText(null).toString()
+                }
+            )
+        }
+}
+
+fun irParaLugar(
+    placeId: String,
+    placesClient: PlacesClient,
+    cameraPositionState: CameraPositionState,
+    viewModel: MapViewModel,
+    querySetter: (String) -> Unit
+) {
+    val req = FetchPlaceRequest.newInstance(
+        placeId,
+        listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+    )
+
+    placesClient.fetchPlace(req)
+        .addOnSuccessListener { res ->
+            val latLng = res.place.latLng ?: return@addOnSuccessListener
+
+            querySetter(res.place.name ?: "")
+            viewModel.setPredictions(emptyList())
+            viewModel.setDestination(latLng)
+
+            cameraPositionState.move(
+                CameraUpdateFactory.newLatLngZoom(latLng, 17f)
+            )
+        }
 }
