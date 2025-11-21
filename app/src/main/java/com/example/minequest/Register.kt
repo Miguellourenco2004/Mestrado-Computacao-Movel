@@ -119,7 +119,9 @@ fun RegisterScreen(navController: NavController) {
                                             "pontosXP" to initialXP,
                                             "pickaxeIndex" to pickaxeIndex,
                                             // Inicializa o inventário vazio
-                                            "inventory" to emptyMap<String, Any>()
+                                            "inventory" to mapOf(
+                                                "dirt" to 1
+                                            )
                                         )
 
                                         database.child(userId).setValue(userData)

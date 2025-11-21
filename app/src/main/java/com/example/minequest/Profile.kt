@@ -225,7 +225,7 @@ fun blockDrawable(id: String): Int {
         "emerald" -> R.drawable.bloco_esmeralda
         "gold" -> R.drawable.bloco_ouro
         "coal" -> R.drawable.bloco_carvao
-        else -> R.drawable.bloco_pedra
+        else -> R.drawable.bloco_terra
     }
 }
 
