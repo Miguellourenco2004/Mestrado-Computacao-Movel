@@ -4,6 +4,11 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.maps.android.PolyUtil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,9 +34,73 @@ class MapViewModel : ViewModel() {
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation = _currentLocation.asStateFlow()
 
+    private var lastSavedLocation: LatLng? = null
+
+    private val _players = MutableStateFlow<List<User>>(emptyList())
+
+    val players = _players.asStateFlow()
+
+
     fun setCurrentLocation(latLng: LatLng) {
         _currentLocation.value = latLng
+
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = FirebaseDatabase.getInstance().getReference("users")
+
+        // Se nunca guardámos ainda
+        if (lastSavedLocation == null) {
+            lastSavedLocation = latLng
+            db.child(uid).child("lat").setValue(latLng.latitude)
+            db.child(uid).child("lng").setValue(latLng.longitude)
+            return
+        }
+
+        // Calcular distância (em metros)
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            lastSavedLocation!!.latitude, lastSavedLocation!!.longitude,
+            latLng.latitude, latLng.longitude,
+            results
+        )
+
+        val distanceMoved = results[0]
+
+        // Apenas guardar se andou mais de 20 metros
+        if (distanceMoved > 20) {
+            lastSavedLocation = latLng
+            db.child(uid).child("lat").setValue(latLng.latitude)
+            db.child(uid).child("lng").setValue(latLng.longitude)
+        }
     }
+
+
+
+
+
+    fun loadPlayers() {
+        val db = FirebaseDatabase.getInstance().getReference("users")
+        val myUid = FirebaseAuth.getInstance().currentUser?.uid
+
+        db.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+
+                val list = snapshot.children.mapNotNull { snap ->
+
+                    val user = snap.getValue(User::class.java) ?: return@mapNotNull null
+
+                    if (snap.key == myUid) return@mapNotNull null
+                    if (user.lat == null || user.lng == null) return@mapNotNull null
+
+                    user
+                }
+
+                _players.value = list
+            }
+
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
 
     // DESTINO
     private val _destination = MutableStateFlow<LatLng?>(null)
@@ -48,6 +117,9 @@ class MapViewModel : ViewModel() {
     fun setPredictions(list: List<Pair<String, String>>) {
         _predictions.value = list
     }
+
+
+
 
     // ROTA
     private val _routePoints = MutableStateFlow<List<LatLng>>(emptyList())
@@ -152,6 +224,9 @@ class MapViewModel : ViewModel() {
         _setubalMarkers.value = parseArray("setubal")
         _portugalMarkers.value = parseArray("portugal")
     }
+
+
+
 
 
 

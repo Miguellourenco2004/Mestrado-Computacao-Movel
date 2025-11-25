@@ -88,7 +88,7 @@ fun MapScreen(
     // Carregar markers + localização inicial
     LaunchedEffect(Unit) {
         viewModel.loadMarkers(context)
-
+        viewModel.loadPlayers()
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED
         ) {
@@ -118,6 +118,7 @@ fun MapScreen(
         currentLocation?.let {
             cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 16f))
         }
+
     }
 
 
@@ -254,12 +255,25 @@ fun MapScreen(
             )
         ) {
 
+
             // Mostrar posição do utilizador
             currentLocation?.let { pos ->
                 Marker(
                     state = MarkerState(pos),
-                    title = "Tu",
+                    title = "Eu",
                     icon = getUserBitmap(userIconRes),
+                    anchor = Offset(0.5f, 0.5f)
+                )
+            }
+
+
+            val players by viewModel.players.collectAsState()
+
+            players.forEach { user ->
+                Marker(
+                    state = MarkerState(LatLng(user.lat!!, user.lng!!)),
+                    title = user.username ?: "",
+                    icon = getUserBitmap(getUserImage(user.profileImage ?: "")),
                     anchor = Offset(0.5f, 0.5f)
                 )
             }

@@ -10,5 +10,8 @@ data class User(
     val email: String? = null,
     val pontosXP: Int? = 0,
     val profileImage: String? = null,
-    val pickaxeIndex: Int? = 0
+    val pickaxeIndex: Int? = 0,
+    val lat: Double? = null,
+    val lng: Double? = null
+
 )
