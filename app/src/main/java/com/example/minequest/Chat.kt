@@ -1,6 +1,7 @@
 package com.example.minequest
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,55 +29,117 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.minequest.ui.theme.MineQuestFont
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
-import com.google.firebase.auth.FirebaseAuth
 
-//  CORES DO TEMA
-val ChatBackground = Color(0xFF4CAF50)
-val MyBubbleColor = Color(0xFF388E3C)
+// --- CORES DO TEMA ---
+val ChatBackground = Color(0xFF52A435)
+val MyBubbleColor = Color(0xFF52A435)
 val OtherBubbleColor = Color(0xFF323232)
 val BorderColor = Color(0xFF6B3B25)
 
-//  MODELO DE DADOS
+//Lógica das Picaretas
+fun getPickaxeImage(index: Int): Int {
+    return when (index) {
+        0 -> R.drawable.madeira
+        1 -> R.drawable.pedra
+        2 -> R.drawable.ferro
+        3 -> R.drawable.ouro
+        4 -> R.drawable.diamante
+        5 -> R.drawable.netherite
+        else -> R.drawable.madeira
+    }
+}
+
+//Lógica das Imagens de Perfil
+fun getProfileDrawable(name: String): Int {
+    return when (name) {
+        "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
+        "4efed46e89c72955ddc7c77ad08b2ee" -> R.drawable._4efed46e89c72955ddc7c77ad08b2ee
+        "578bfd439ef6ee41e103ae82b561986" -> R.drawable._578bfd439ef6ee41e103ae82b561986
+        "faf3182a063a0f2a825cb39d959bae7" -> R.drawable._faf3182a063a0f2a825cb39d959bae7
+        "a9a4ec03fa9afc407028ca40c20ed774" -> R.drawable.a9a4ec03fa9afc407028ca40c20ed774
+        "big_villager_face" -> R.drawable.big_villager_face
+        "images" -> R.drawable.images
+        "steve" -> R.drawable.steve
+        else -> R.drawable.minecraft_creeper_face
+    }
+}
+
+//  Formatar Hora Inteligente
+fun formatTime(timestamp: Long): String {
+    val now = Date()
+    val msgDate = Date(timestamp)
+
+    // Formatadores
+    val dayFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+
+    // Verifica se a mensagem é de hoje
+    val isToday = dayFormat.format(now) == dayFormat.format(msgDate)
+
+    return if (isToday) {
+        // Se for hoje, mostra só as horas
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        sdf.format(msgDate)
+    } else {
+        // Se for outro dia, mostra dia/mês e horas
+        val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
+        sdf.format(msgDate)
+    }
+}
+
+// --- MODELO DE DADOS ---
 data class Message(
     val id: String = "",
     val senderId: String = "",
     val senderName: String = "",
     val text: String = "",
     val timestamp: Long = 0,
+    val pickaxeIndex: Int = 0,
+    val profileImageName: String = "steve",
     val isMine: Boolean = false
 )
 
-//  VIEWMODEL
+// --- VIEWMODEL ---
 class ChatViewModel(private val context: Context) : ViewModel() {
 
     private val database = FirebaseDatabase.getInstance()
     private val chatRef = database.getReference("chat_global")
-
     private val usersRef = database.getReference("users")
-    private val auth = FirebaseAuth.getInstance() // <-- Para saber quem está logado
+    private val auth = FirebaseAuth.getInstance()
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
     private var myUserId: String = ""
     private var myUserName: String = "Anonimo"
+    private var myPickaxeIndex: Int = 0
+    private var myProfileImageName: String = "steve"
 
     init {
-        // 1. Verificar quem é o utilizador logado
         val currentUser = auth.currentUser
 
         if (currentUser != null) {
             myUserId = currentUser.uid
 
             usersRef.child(myUserId).get().addOnSuccessListener { snapshot ->
-                myUserName = snapshot.child("username").getValue(String::class.java) ?: "Mineiro"
+                // Usa getStringSafe para evitar erros se o nome for um número por engano
+                myUserName = getStringSafe(snapshot, "username").ifBlank { "Mineiro" }
+
+                myPickaxeIndex = getIntSafe(snapshot, "pickaxeIndex")
+
+                // Usa getStringSafe aqui também! Se for número, vira texto e não cracha.
+                myProfileImageName = getStringSafe(snapshot, "profileImage").ifBlank { "steve" }
+
             }.addOnFailureListener {
                 myUserName = "Mineiro_Erro"
             }
@@ -87,6 +151,24 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         listenToMessages()
     }
 
+    // --- FUNÇÃO SEGURA PARA LER NÚMEROS ---
+    private fun getIntSafe(snapshot: DataSnapshot, field: String): Int {
+        val value = snapshot.child(field).value
+        return when (value) {
+            is Long -> value.toInt()
+            is Int -> value
+            is String -> value.toIntOrNull() ?: 0
+            else -> 0
+        }
+    }
+
+    // --- NOVA FUNÇÃO SEGURA PARA LER TEXTO ---
+    // Isto resolve o erro "Failed to convert Long to String"
+    private fun getStringSafe(snapshot: DataSnapshot, field: String): String {
+        val value = snapshot.child(field).value
+        return value?.toString() ?: "" // Se for número, converte para string. Se for null, devolve vazio.
+    }
+
     private fun listenToMessages() {
         chatRef.addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
@@ -94,10 +176,19 @@ class ChatViewModel(private val context: Context) : ViewModel() {
 
                 for (child in snapshot.children) {
                     val id = child.key ?: ""
-                    val senderId = child.child("senderId").getValue(String::class.java) ?: ""
-                    val senderName = child.child("senderName").getValue(String::class.java) ?: "Unknown"
-                    val text = child.child("text").getValue(String::class.java) ?: ""
-                    val timestamp = child.child("timestamp").getValue(Long::class.java) ?: 0L
+
+                    // APLICAÇÃO GERAL DA LEITURA SEGURA
+                    val senderId = getStringSafe(child, "senderId")
+                    val senderName = getStringSafe(child, "senderName").ifBlank { "Unknown" }
+                    val text = getStringSafe(child, "text")
+
+                    // Timestamp continua a ser Long/Double normalmente
+                    val timestamp = try {
+                        child.child("timestamp").getValue(Long::class.java) ?: 0L
+                    } catch (e: Exception) { 0L }
+
+                    val pIndex = getIntSafe(child, "pickaxeIndex")
+                    val pImageName = getStringSafe(child, "profileImage").ifBlank { "steve" }
 
                     val msg = Message(
                         id = id,
@@ -105,7 +196,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         senderName = senderName,
                         text = text,
                         timestamp = timestamp,
-                        // Compara com o ID do Auth ou o gerado
+                        pickaxeIndex = pIndex,
+                        profileImageName = pImageName,
                         isMine = (senderId == myUserId)
                     )
                     listaMensagens.add(msg)
@@ -113,9 +205,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 _messages.value = listaMensagens
             }
 
-            override fun onCancelled(error: DatabaseError) {
-                // ...
-            }
+            override fun onCancelled(error: DatabaseError) { }
         })
     }
 
@@ -124,16 +214,18 @@ class ChatViewModel(private val context: Context) : ViewModel() {
 
         val newMessageMap = hashMapOf(
             "senderId" to myUserId,
-            "senderName" to myUserName, // <-- Agora envia o nome real!
+            "senderName" to myUserName,
             "text" to text,
-            "timestamp" to System.currentTimeMillis()
+            "timestamp" to System.currentTimeMillis(),
+            "pickaxeIndex" to myPickaxeIndex,
+            "profileImage" to myProfileImageName
         )
 
         chatRef.push().setValue(newMessageMap)
     }
 }
 
-//  FACTORY
+// --- FACTORY ---
 class ChatViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
@@ -144,7 +236,7 @@ class ChatViewModelFactory(private val context: Context) : ViewModelProvider.Fac
     }
 }
 
-//  ECRÃ DO CHAT
+// --- ECRÃ CHAT ---
 @Composable
 fun Chat(navController: NavHostController) {
 
@@ -155,7 +247,6 @@ fun Chat(navController: NavHostController) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // Scroll automático
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -170,7 +261,6 @@ fun Chat(navController: NavHostController) {
             .imePadding()
     ) {
 
-        // Título
         Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
             Text(
                 text = "Global Chat",
@@ -192,7 +282,7 @@ fun Chat(navController: NavHostController) {
             LazyColumn(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(messages) { msg ->
                     ChatBubble(message = msg)
@@ -244,14 +334,13 @@ fun Chat(navController: NavHostController) {
     }
 }
 
-// --- BALÃO DE FALA ---
+// --- CHAT BUBBLE ---
 @Composable
 fun ChatBubble(message: Message) {
     val bubbleColor = if (message.isMine) MyBubbleColor else OtherBubbleColor
-    val alignment = if (message.isMine) Alignment.End else Alignment.Start
 
-    // Alinha o texto do nome também à direita se for meu, ou à esquerda se for do outro
-    val nameAlignment = if (message.isMine) Alignment.End else Alignment.Start
+    val alignment = if (message.isMine) Alignment.End else Alignment.Start
+    val headerArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
 
     val bubbleShape = if (message.isMine) {
         RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 4.dp)
@@ -263,18 +352,49 @@ fun ChatBubble(message: Message) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment
     ) {
-        Text(
-            text = message.senderName,
-            color = Color.White.copy(alpha = 0.7f), // Um pouco transparente
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = MineQuestFont,
-            modifier = Modifier.padding(
-                start = 8.dp,
-                end = 8.dp,
-                bottom = 4.dp // Espaço entre o nome e a bolha
+        // --- CABEÇALHO ---
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = headerArrangement,
+            modifier = Modifier
+                .padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
+                .fillMaxWidth()
+        ) {
+            // 1. Ícone do Jogador
+            Image(
+                painter = painterResource(id = getProfileDrawable(message.profileImageName)),
+                contentDescription = "Avatar",
+                modifier = Modifier.size(20.dp)
             )
-        )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            // 2. Ícone da Picareta
+            Image(
+                painter = painterResource(id = getPickaxeImage(message.pickaxeIndex)),
+                contentDescription = "Pickaxe",
+                modifier = Modifier.size(20.dp)
+            )
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            Text(
+                text = message.senderName,
+                color = Color.White.copy(alpha = 0.9f),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = MineQuestFont
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = formatTime(message.timestamp),
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 10.sp,
+                fontFamily = MineQuestFont
+            )
+        }
 
         Surface(
             color = bubbleColor,
