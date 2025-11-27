@@ -31,7 +31,7 @@ import kotlinx.coroutines.delay
 import com.example.minequest.ui.theme.MineQuestFont
 
 val MineGreen = Color(0xFF4CAF50)
-val MineDarkGreen = Color(0xFF388E3C)
+val MineDarkGreen = Color(0xFF52A435)
 
 data class Picareta(
     val nome: String,

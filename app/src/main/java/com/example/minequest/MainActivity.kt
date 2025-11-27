@@ -32,8 +32,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import android.Manifest
+import androidx.compose.foundation.background
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color.Companion.Green
 import com.google.android.libraries.places.api.Places
 
 class MainActivity : ComponentActivity() {
@@ -122,6 +124,7 @@ fun MineQuestApp() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        containerColor = Color(0xFF52A435),
         bottomBar = {
             if (currentUser != null) {
                 MineQuestBottomBar(navController = navController)

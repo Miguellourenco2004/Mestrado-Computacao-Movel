@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import com.example.minequest.ui.theme.MineQuestFont
 
@@ -62,7 +63,6 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MineQuestGreen)
             .padding(24.dp),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -93,7 +93,6 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
 
 
 // Definir cores customizadas (ajuste conforme necessário)
-val MineQuestGreen = Color(0xFF388E3C) // Verde do fundo (ex: #6AA84F)
 val ItemBackground = Color(0xFFFFFFFF) // Fundo dos itens (branco)
 val XPTextColor = Color(0xFFFF9900)    // Cor do XP (ex: #FF9900)
 
@@ -109,7 +108,7 @@ fun RankingItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(8.dp),
+        shape = RectangleShape,
         colors = CardDefaults.cardColors(containerColor = ItemBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -147,7 +146,6 @@ fun RankingItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(2.dp)
-                        .background(MineQuestGreen.copy(alpha = 0.5f))
                 )
             }
         }
