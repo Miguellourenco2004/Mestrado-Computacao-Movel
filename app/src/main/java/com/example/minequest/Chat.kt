@@ -4,13 +4,17 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,8 +26,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -47,7 +53,13 @@ val MyBubbleColor = Color(0xFF52A435)
 val OtherBubbleColor = Color(0xFF323232)
 val BorderColor = Color(0xFF6B3B25)
 
-//Lógica das Picaretas
+// --- MODELO DO INVENTÁRIO (Para o Chat) ---
+data class ChatInventorySlot(
+    val blockId: String,
+    val quantity: Int
+)
+
+// --- UTILS: Lógica das Picaretas ---
 fun getPickaxeImage(index: Int): Int {
     return when (index) {
         0 -> R.drawable.madeira
@@ -60,7 +72,18 @@ fun getPickaxeImage(index: Int): Int {
     }
 }
 
-//Lógica das Imagens de Perfil
+// --- UTILS: Imagens dos Blocos (Igual ao teu Profile) ---
+fun getBlockDrawableChat(id: String): Int {
+    return when (id) {
+        "diamond" -> R.drawable.bloco_diamante
+        "emerald" -> R.drawable.bloco_esmeralda
+        "gold" -> R.drawable.bloco_ouro
+        "coal" -> R.drawable.bloco_carvao
+        else -> R.drawable.bloco_terra
+    }
+}
+
+// --- UTILS: Lógica das Imagens de Perfil ---
 fun getProfileDrawable(name: String): Int {
     return when (name) {
         "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
@@ -75,23 +98,17 @@ fun getProfileDrawable(name: String): Int {
     }
 }
 
-//  Formatar Hora Inteligente
+// --- UTILS: Formatar Hora ---
 fun formatTime(timestamp: Long): String {
     val now = Date()
     val msgDate = Date(timestamp)
-
-    // Formatadores
     val dayFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-
-    // Verifica se a mensagem é de hoje
     val isToday = dayFormat.format(now) == dayFormat.format(msgDate)
 
     return if (isToday) {
-        // Se for hoje, mostra só as horas
         val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
         sdf.format(msgDate)
     } else {
-        // Se for outro dia, mostra dia/mês e horas
         val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
         sdf.format(msgDate)
     }
@@ -132,12 +149,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             myUserId = currentUser.uid
 
             usersRef.child(myUserId).get().addOnSuccessListener { snapshot ->
-                // Usa getStringSafe para evitar erros se o nome for um número por engano
                 myUserName = getStringSafe(snapshot, "username").ifBlank { "Mineiro" }
-
                 myPickaxeIndex = getIntSafe(snapshot, "pickaxeIndex")
-
-                // Usa getStringSafe aqui também! Se for número, vira texto e não cracha.
                 myProfileImageName = getStringSafe(snapshot, "profileImage").ifBlank { "steve" }
 
             }.addOnFailureListener {
@@ -151,7 +164,6 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         listenToMessages()
     }
 
-    // --- FUNÇÃO SEGURA PARA LER NÚMEROS ---
     private fun getIntSafe(snapshot: DataSnapshot, field: String): Int {
         val value = snapshot.child(field).value
         return when (value) {
@@ -162,11 +174,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    // --- NOVA FUNÇÃO SEGURA PARA LER TEXTO ---
-    // Isto resolve o erro "Failed to convert Long to String"
     private fun getStringSafe(snapshot: DataSnapshot, field: String): String {
         val value = snapshot.child(field).value
-        return value?.toString() ?: "" // Se for número, converte para string. Se for null, devolve vazio.
+        return value?.toString() ?: ""
     }
 
     private fun listenToMessages() {
@@ -176,17 +186,10 @@ class ChatViewModel(private val context: Context) : ViewModel() {
 
                 for (child in snapshot.children) {
                     val id = child.key ?: ""
-
-                    // APLICAÇÃO GERAL DA LEITURA SEGURA
                     val senderId = getStringSafe(child, "senderId")
                     val senderName = getStringSafe(child, "senderName").ifBlank { "Unknown" }
                     val text = getStringSafe(child, "text")
-
-                    // Timestamp continua a ser Long/Double normalmente
-                    val timestamp = try {
-                        child.child("timestamp").getValue(Long::class.java) ?: 0L
-                    } catch (e: Exception) { 0L }
-
+                    val timestamp = try { child.child("timestamp").getValue(Long::class.java) ?: 0L } catch (e: Exception) { 0L }
                     val pIndex = getIntSafe(child, "pickaxeIndex")
                     val pImageName = getStringSafe(child, "profileImage").ifBlank { "steve" }
 
@@ -247,10 +250,19 @@ fun Chat(navController: NavHostController) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    var selectedUserMessage by remember { mutableStateOf<Message?>(null) }
+
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
         }
+    }
+
+    if (selectedUserMessage != null) {
+        UserProfileDialog(
+            message = selectedUserMessage!!,
+            onDismiss = { selectedUserMessage = null }
+        )
     }
 
     Column(
@@ -285,7 +297,10 @@ fun Chat(navController: NavHostController) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(messages) { msg ->
-                    ChatBubble(message = msg)
+                    ChatBubble(
+                        message = msg,
+                        onHeaderClick = { selectedUserMessage = msg }
+                    )
                 }
             }
         }
@@ -334,11 +349,213 @@ fun Chat(navController: NavHostController) {
     }
 }
 
-// --- CHAT BUBBLE ---
+// --- DIALOG DO PERFIL COM INVENTÁRIO ---
 @Composable
-fun ChatBubble(message: Message) {
-    val bubbleColor = if (message.isMine) MyBubbleColor else OtherBubbleColor
+fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
+    val database = FirebaseDatabase.getInstance().getReference("users")
+    var inventorySlots by remember { mutableStateOf<List<ChatInventorySlot>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
+    // Carrega o inventário deste jogador específico
+    LaunchedEffect(message.senderId) {
+        if (message.senderId.isNotEmpty()) {
+            database.child(message.senderId).child("inventory").get()
+                .addOnSuccessListener { snapshot ->
+                    val slots = mutableListOf<ChatInventorySlot>()
+                    for (item in snapshot.children) {
+                        val blockId = item.key ?: continue
+                        val quantity = item.getValue(Int::class.java) ?: 0
+                        slots += splitIntoSlotsChat(blockId, quantity)
+                    }
+                    inventorySlots = slots
+                    isLoading = false
+                }
+                .addOnFailureListener { isLoading = false }
+        } else {
+            isLoading = false
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(ChatBackground, RoundedCornerShape(16.dp))
+                .border(3.dp, BorderColor, RoundedCornerShape(16.dp))
+                .padding(24.dp)
+        ) {
+            // Adicionado scroll caso o inventário seja grande
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // Título
+                Text(
+                    text = "Player Profile",
+                    fontFamily = MineQuestFont,
+                    fontSize = 24.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 24.dp)
+                )
+
+                // Imagem
+                Image(
+                    painter = painterResource(id = getProfileDrawable(message.profileImageName)),
+                    contentDescription = "Large Avatar",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .border(2.dp, BorderColor, RoundedCornerShape(8.dp))
+                        .background(Color(0xFF323232), RoundedCornerShape(8.dp))
+                        .padding(8.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Nome
+                Text(
+                    text = message.senderName,
+                    fontFamily = MineQuestFont,
+                    fontSize = 28.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Picareta (Simples)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = getPickaxeImage(message.pickaxeIndex)),
+                        contentDescription = "Pickaxe",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Level ${message.pickaxeIndex + 1}",
+                        fontFamily = MineQuestFont,
+                        fontSize = 16.sp,
+                        color = Color.Yellow
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // --- INVENTÁRIO DO JOGADOR ---
+                Text(
+                    text = "Inventory",
+                    fontFamily = MineQuestFont,
+                    fontSize = 18.sp,
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.Start)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White)
+                } else if (inventorySlots.isEmpty()) {
+                    Text("Empty Inventory", color = Color.Gray, fontFamily = MineQuestFont)
+                } else {
+                    // Grelha de Inventário (4 colunas para caber no dialog)
+                    ChatInventoryGrid(slots = inventorySlots, columns = 4)
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = BorderColor),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "Close", fontFamily = MineQuestFont, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+// --- GRELHA DE INVENTÁRIO DO CHAT ---
+@Composable
+fun ChatInventoryGrid(slots: List<ChatInventorySlot>, rows: Int = 3, columns: Int = 4) {
+    val totalSlots = rows * columns
+    val filledSlots = slots + List((totalSlots - slots.size).coerceAtLeast(0)) { null }
+
+    Column(
+        modifier = Modifier
+            .background(Color(0xFFC6C6C6))
+            .border(2.dp, Color.Black)
+            .padding(4.dp)
+    ) {
+        // Mostra no máximo 'rows' linhas para não ocupar o ecrã todo
+        val displayRows = (filledSlots.size + columns - 1) / columns
+
+        for (row in 0 until minOf(rows, displayRows)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                for (col in 0 until columns) {
+                    val index = row * columns + col
+                    if (index < filledSlots.size) {
+                        ChatInventorySlotView(filledSlots[index], modifier = Modifier.weight(1f))
+                    } else {
+                        ChatInventorySlotView(null, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+            if (row < displayRows - 1) Spacer(modifier = Modifier.height(2.dp))
+        }
+    }
+}
+
+@Composable
+fun ChatInventorySlotView(slot: ChatInventorySlot?, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .aspectRatio(1f) // Mantém quadrado
+            .background(Color(0xFF8B8B8B))
+            .border(1.dp, Color(0xFF373737))
+            .padding(1.dp)
+    ) {
+        if (slot != null) {
+            Image(
+                painter = painterResource(id = getBlockDrawableChat(slot.blockId)),
+                contentDescription = slot.blockId,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (slot.quantity > 1) {
+                Text(
+                    text = "${slot.quantity}",
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontFamily = MineQuestFont,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                )
+            }
+        }
+    }
+}
+
+// Função auxiliar para dividir stacks (igual ao Profile)
+fun splitIntoSlotsChat(blockId: String, quantity: Int): List<ChatInventorySlot> {
+    val slots = mutableListOf<ChatInventorySlot>()
+    var remaining = quantity
+    while (remaining > 0) {
+        val slotQty = minOf(64, remaining)
+        slots.add(ChatInventorySlot(blockId, slotQty))
+        remaining -= slotQty
+    }
+    return slots
+}
+
+// --- CHAT BUBBLE (Mantém-se igual) ---
+@Composable
+fun ChatBubble(message: Message, onHeaderClick: () -> Unit) {
+    val bubbleColor = if (message.isMine) MyBubbleColor else OtherBubbleColor
     val alignment = if (message.isMine) Alignment.End else Alignment.Start
     val headerArrangement = if (message.isMine) Arrangement.End else Arrangement.Start
 
@@ -352,32 +569,26 @@ fun ChatBubble(message: Message) {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = alignment
     ) {
-        // --- CABEÇALHO ---
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = headerArrangement,
             modifier = Modifier
                 .padding(bottom = 4.dp, start = 4.dp, end = 4.dp)
                 .fillMaxWidth()
+                .clickable { onHeaderClick() }
         ) {
-            // 1. Ícone do Jogador
             Image(
                 painter = painterResource(id = getProfileDrawable(message.profileImageName)),
                 contentDescription = "Avatar",
                 modifier = Modifier.size(20.dp)
             )
-
             Spacer(modifier = Modifier.width(4.dp))
-
-            // 2. Ícone da Picareta
             Image(
                 painter = painterResource(id = getPickaxeImage(message.pickaxeIndex)),
                 contentDescription = "Pickaxe",
                 modifier = Modifier.size(20.dp)
             )
-
             Spacer(modifier = Modifier.width(6.dp))
-
             Text(
                 text = message.senderName,
                 color = Color.White.copy(alpha = 0.9f),
@@ -385,9 +596,7 @@ fun ChatBubble(message: Message) {
                 fontWeight = FontWeight.Bold,
                 fontFamily = MineQuestFont
             )
-
             Spacer(modifier = Modifier.width(8.dp))
-
             Text(
                 text = formatTime(message.timestamp),
                 color = Color.White.copy(alpha = 0.6f),
