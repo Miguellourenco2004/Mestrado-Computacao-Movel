@@ -116,7 +116,7 @@ fun LoginScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate(Screens.Register.route) }) {
-                Text("Não tens conta? Regista-te", fontFamily = MineQuestFont, color = Color(0xFF513220)))
+                Text("Não tens conta? Regista-te", fontFamily = MineQuestFont, color = Color(0xFF513220))
             }
 
             if (loading) {
