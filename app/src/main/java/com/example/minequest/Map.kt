@@ -7,20 +7,32 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Looper
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.launch
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import androidx.palette.graphics.Palette
+import com.example.minequest.ui.theme.MineQuestFont
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
@@ -39,7 +51,95 @@ fun MapScreen(
     viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
 
+
+
+
+
+
+
     val context = LocalContext.current
+
+
+
+    // Estados para a cor
+    var capturedColor by remember { mutableStateOf<Color?>(null) }
+    var showColorDialog by remember { mutableStateOf(false) }
+
+    // ... (código existente de loadMarkers, etc.) ...
+
+    // --- CÂMARA COM PALETTE ---
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            // ✅ Usar a biblioteca Palette para gerar as cores
+            Palette.from(bitmap).generate { palette ->
+                // O 'dominantSwatch' devolve a cor que aparece em maior quantidade
+                val swatch = palette?.dominantSwatch
+
+                // Se preferires cores vivas, podes usar palette?.vibrantSwatch
+
+                if (swatch != null) {
+                    capturedColor = Color(swatch.rgb)
+                    showColorDialog = true
+                } else {
+                    Toast.makeText(context, "Não foi possível detetar cor", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+// Launcher para pedir permissão de câmara se necessário
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch()
+        } else {
+            Toast.makeText(context, "Permissão de câmara necessária", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+
+    if (showColorDialog && capturedColor != null) {
+        AlertDialog(
+            onDismissRequest = { showColorDialog = false },
+            title = {
+                Text("Cor Detetada", fontFamily = MineQuestFont, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                    // 1. A caixa colorida
+                    Box(
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(capturedColor!!, RoundedCornerShape(16.dp))
+                            .border(2.dp, Color.Black, RoundedCornerShape(16.dp)) // Opcional: Borda para destaque
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    // 2. O texto com o código Hex
+                    Text(
+                        text = "Hex: #${Integer.toHexString(capturedColor!!.toArgb()).uppercase()}",
+                        fontFamily = MineQuestFont,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showColorDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220)) // Cor do tema
+                ) {
+                    Text("OK", fontFamily = MineQuestFont, color = Color.White)
+                }
+            },
+            containerColor = Color.White, // Fundo do diálogo
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
 
     // Foto do utilizador guardada na BD
     var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
@@ -385,7 +485,29 @@ fun MapScreen(
             }
         }
 
-
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(top = 100.dp, end = 16.dp)
+        ) {
+            FloatingActionButton(
+                onClick = {
+                    // Verifica permissão antes de abrir
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        cameraLauncher.launch()
+                    } else {
+                        permissionLauncher.launch(Manifest.permission.CAMERA)
+                    }
+                },
+                containerColor = Color.White,
+                contentColor = Color(0xFF513220) // Cor castanha do tema
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Abrir Câmara"
+                )
+            }
+        }
 
         // ---------------------------
         // PAINEL DE DISTÂNCIA/TEMPO

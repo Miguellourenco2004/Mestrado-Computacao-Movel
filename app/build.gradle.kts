@@ -64,7 +64,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("com.google.maps.android:maps-utils-ktx:3.4.0")
 
-
+    implementation("androidx.palette:palette-ktx:1.0.0")
 
     implementation("com.google.android.libraries.places:places:3.5.0")
 
