@@ -1,10 +1,14 @@
 package com.example.minequest
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -32,15 +36,31 @@ fun RegisterScreen(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont)
+            Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont, color = Color(0xFF513220))
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username", fontFamily = MineQuestFont,) },
+                label = { Text("Username", fontFamily = MineQuestFont,color = Color(0xFF513220)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
+                    .border(
+                        width = 3.dp,
+                        color = Color(0xFF513220),
+                        shape = RectangleShape
+                    ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color(0xFF513220),
+                    focusedLabelColor = Color(0xFF513220),
+                    unfocusedLabelColor = Color(0xFF513220)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -48,9 +68,25 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontFamily = MineQuestFont) },
+                label = { Text("Email", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
+                    .border(
+                        width = 3.dp,
+                        color = Color(0xFF513220),
+                        shape = RectangleShape
+                    ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color(0xFF513220),
+                    focusedLabelColor = Color(0xFF513220),
+                    unfocusedLabelColor = Color(0xFF513220)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -58,10 +94,26 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", fontFamily = MineQuestFont) },
+                label = { Text("Password", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
+                    .border(
+                        width = 3.dp,
+                        color = Color(0xFF513220),
+                        shape = RectangleShape
+                    ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color(0xFF513220),
+                    focusedLabelColor = Color(0xFF513220),
+                    unfocusedLabelColor = Color(0xFF513220)
+                )
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -69,10 +121,26 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password", fontFamily = MineQuestFont) },
+                label = { Text("Confirm Password", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
+                    .border(
+                        width = 3.dp,
+                        color = Color(0xFF513220),
+                        shape = RectangleShape
+                    ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    cursorColor = Color(0xFF513220),
+                    focusedLabelColor = Color(0xFF513220),
+                    unfocusedLabelColor = Color(0xFF513220)
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -148,7 +216,12 @@ fun RegisterScreen(navController: NavController) {
                             errorMessage = "Error checking username: ${it.message}"
                         }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF513220),
+                    contentColor = Color.White
+                ),
+                shape = RectangleShape,
             ) {
                 Text("Register", fontFamily = MineQuestFont)
             }
@@ -156,7 +229,7 @@ fun RegisterScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate(Screens.Login.route) }) {
-                Text("Already have an account? Log in", fontFamily = MineQuestFont)
+                Text("Already have an account? Log in", fontFamily = MineQuestFont, color = Color(0xFF513220))
             }
 
             if (loading) {

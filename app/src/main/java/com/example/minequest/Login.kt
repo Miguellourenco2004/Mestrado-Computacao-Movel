@@ -1,5 +1,6 @@
 package com.example.minequest
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -45,12 +46,15 @@ fun LoginScreen(navController: NavController) {
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
                     .border(
-                        width = 2.dp,
+                        width = 3.dp,
                         color = Color(0xFF513220),
                         shape = RectangleShape
                     ),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
                     cursorColor = Color(0xFF513220),
@@ -70,12 +74,15 @@ fun LoginScreen(navController: NavController) {
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(Color.White, RectangleShape)
                     .border(
                         width = 3.dp,
                         color = Color(0xFF513220),
                         shape = RectangleShape
                     ),
                 colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
                     cursorColor = Color(0xFF513220),
@@ -108,7 +115,8 @@ fun LoginScreen(navController: NavController) {
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFF513220),
                     contentColor = Color.White
-                )
+                ),
+                shape = RectangleShape
             ) {
                 Text("Login", fontFamily = MineQuestFont)
             }

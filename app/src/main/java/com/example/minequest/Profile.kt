@@ -3,8 +3,12 @@ package com.example.minequest
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +18,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -24,6 +30,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
+import kotlin.math.roundToInt
 
 
 @Composable
@@ -39,7 +47,14 @@ fun Profile(
     var profileImageName by remember { mutableStateOf("") }
     var pontosXP by remember { mutableStateOf(0) }
 
-    // Carrega os dados do utilizador (nome + imagem)
+    // Vai guardar qual o bloco a dropar
+    var slotToDrop by remember { mutableStateOf<InventorySlot?>(null) }
+
+    // Estado para recarregar a lista de blocos do inventário -> Qunado mudar os blocos do inventário
+    // vão voltar a ser "fetched" na base de dados
+    var reloadTrigger by remember { mutableIntStateOf(0) }
+
+    // Carrega os dados do utilizador (nome + imagem + pontosXP)
     LaunchedEffect(auth.currentUser) {
         auth.currentUser?.let { user ->
             database.child(user.uid).get()
@@ -59,20 +74,16 @@ fun Profile(
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
     // Carrega o inventário do utilizador
-    LaunchedEffect(auth.currentUser) {
+    LaunchedEffect(auth.currentUser, reloadTrigger) {
         auth.currentUser?.let { user ->
             database.child(user.uid).child("inventory").get()
                 .addOnSuccessListener { snapshot ->
-
                     val slots = mutableListOf<InventorySlot>()
-
                     for (item in snapshot.children) {
                         val blockId = item.key ?: continue
                         val quantity = item.getValue(Int::class.java) ?: 0
-
                         slots += splitIntoSlots(blockId, quantity)
                     }
-
                     inventorySlots = slots
                 }
         }
@@ -117,7 +128,12 @@ fun Profile(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            InventoryGrid(slots = inventorySlots)
+            InventoryGrid(
+                slots = inventorySlots,
+                onSlotClick = { slot ->
+                    slotToDrop = slot
+                }
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -129,7 +145,6 @@ fun Profile(
                         popUpTo(0)
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Red,
                     contentColor = Color.White
@@ -139,16 +154,45 @@ fun Profile(
                 Text("Logout", fontFamily = MineQuestFont)
             }
         }
+
+        if (slotToDrop != null) {
+            DropItemDialog(
+                slot = slotToDrop!!,
+                onDismiss = { slotToDrop = null },
+                onConfirm = { quantityToDrop ->
+                    auth.currentUser?.let { user ->
+                        val itemRef = database.child(user.uid).child("inventory").child(slotToDrop!!.blockId)
+
+                        // Ler a quantidade real no servidor antes de subtrair
+                        itemRef.get().addOnSuccessListener { snapshot ->
+                            val currentTotal = snapshot.getValue(Int::class.java) ?: 0
+                            val newTotal = currentTotal - quantityToDrop
+
+                            if (newTotal <= 0) {
+                                itemRef.removeValue()
+                            } else {
+                                itemRef.setValue(newTotal)
+                            }
+
+                            // Forçar a atualização visual da grelha
+                            reloadTrigger++
+                            slotToDrop = null
+                        }
+                    }
+                }
+            )
+        }
     }
 }
 
 @Composable
-fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier) {
+fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Box(
         modifier = modifier
             .size(48.dp)
             .border(2.dp, Color.Black)
             .background(Color(0xFF8D8D8D))
+            .clickable(enabled = slot != null) { onClick() }
     ) {
         if (slot != null) {
             Image(
@@ -174,7 +218,7 @@ fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6) {
+fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6, onSlotClick: (InventorySlot) -> Unit = {}) {
     val totalSlots = rows * columns
     val filledSlots = slots + List(totalSlots - slots.size) { null }
 
@@ -190,9 +234,15 @@ fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6) {
             ) {
                 for (col in 0 until columns) {
                     val index = row * columns + col
+                    val currentSlot = filledSlots.getOrNull(index)
                     InventorySlotView(
                         filledSlots[index],
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            if (currentSlot != null) {
+                                onSlotClick(currentSlot)
+                            }
+                        }
                     )
                 }
             }
@@ -203,6 +253,123 @@ fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6) {
             }
         }
     }
+}
+
+@Composable
+fun DropItemDialog(
+    slot: InventorySlot,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var quantityText by remember { mutableStateOf("1") }
+    val maxQuantity = slot.quantity.toFloat()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RectangleShape,
+        title = { Text(text = "Drop item?", fontFamily = MineQuestFont) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = blockDrawable(slot.blockId)),
+                    contentDescription = null,
+                    modifier = Modifier.size(100.dp)
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("BLock: ${slot.blockId}", fontFamily = MineQuestFont, fontSize = 20.sp)
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // --- ZONA DE INPUT (MENOS | TEXTO | MAIS) ---
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+
+                    IconButton(
+                        onClick = {
+                            val current = quantityText.toIntOrNull() ?: 0
+                            if (current > 1) {
+                                quantityText = (current - 1).toString()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = "Diminuir")
+                    }
+
+
+                    OutlinedTextField(
+                        value = quantityText,
+                        onValueChange = { newValue ->
+                            val filteredValue = newValue.filter { it.isDigit() }
+
+                            if (filteredValue.isEmpty()) {
+                                quantityText = ""
+                            } else {
+                                val num = filteredValue.toIntOrNull() ?: 0
+
+                                if (num <= maxQuantity) {
+                                    quantityText = filteredValue
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .width(80.dp)
+                            .padding(horizontal = 4.dp),
+                        textStyle = LocalTextStyle.current.copy(
+                            textAlign = TextAlign.Center,
+                            fontFamily = MineQuestFont,
+                            fontSize = 20.sp
+                        ),
+                        shape = RectangleShape,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                    )
+
+                    // Botão MAIS (+)
+                    IconButton(
+
+                        onClick = {
+                            val current = quantityText.toIntOrNull() ?: 0
+                            if (current < maxQuantity) {
+                                quantityText = (current + 1).toString()
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Aumentar")
+                    }
+                }
+
+                // Texto de ajuda (Ex: "Máx: 64")
+                Text(
+                    text = "Máx: ${maxQuantity.roundToInt()}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(top = 4.dp),
+                    fontSize = 15.sp
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val finalQty = quantityText.toIntOrNull() ?: 0
+                    if (finalQty > 0) {
+                        onConfirm(finalQty)
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                shape = RectangleShape
+            ) {
+                Text("Drop", fontFamily = MineQuestFont,  fontSize = 15.sp)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", fontFamily = MineQuestFont, fontSize = 15.sp)
+            }
+        }
+    )
 }
 
 
