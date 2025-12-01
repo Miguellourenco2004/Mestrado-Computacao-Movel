@@ -11,8 +11,10 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +27,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,8 +66,8 @@ fun MapScreen(
 
     // Estados para a cor
     var capturedColor by remember { mutableStateOf<Color?>(null) }
+    var capturedColorName by remember { mutableStateOf("") } // <--- NOVO
     var showColorDialog by remember { mutableStateOf(false) }
-
     // ... (código existente de loadMarkers, etc.) ...
 
     // --- CÂMARA COM PALETTE ---
@@ -72,15 +75,17 @@ fun MapScreen(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
         if (bitmap != null) {
-            // ✅ Usar a biblioteca Palette para gerar as cores
-            Palette.from(bitmap).generate { palette ->
-                // O 'dominantSwatch' devolve a cor que aparece em maior quantidade
-                val swatch = palette?.dominantSwatch
-
-                // Se preferires cores vivas, podes usar palette?.vibrantSwatch
+            androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
+                // Tenta pegar a cor dominante, ou a vibrante se falhar
+                val swatch = palette?.dominantSwatch ?: palette?.vibrantSwatch
 
                 if (swatch != null) {
-                    capturedColor = Color(swatch.rgb)
+                    val colorObj = Color(swatch.rgb)
+
+                    capturedColor = colorObj
+                    // AQUI CHAMAMOS A FUNÇÃO DE AGRUPAMENTO
+                    capturedColorName = getClosestColorName(colorObj)
+
                     showColorDialog = true
                 } else {
                     Toast.makeText(context, "Não foi possível detetar cor", Toast.LENGTH_SHORT).show()
@@ -102,40 +107,58 @@ fun MapScreen(
 
 
 
+    // --- DIÁLOGO ATUALIZADO ---
     if (showColorDialog && capturedColor != null) {
         AlertDialog(
             onDismissRequest = { showColorDialog = false },
             title = {
-                Text("Cor Detetada", fontFamily = MineQuestFont, fontWeight = FontWeight.Bold)
+                // Mostra o nome da categoria (Ex: "Verde")
+                Text(
+                    text = "Cor: $capturedColorName",
+                    fontFamily = MineQuestFont,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp
+                )
             },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    // 1. A caixa colorida
+
                     Box(
                         modifier = Modifier
                             .size(100.dp)
                             .background(capturedColor!!, RoundedCornerShape(16.dp))
-                            .border(2.dp, Color.Black, RoundedCornerShape(16.dp)) // Opcional: Borda para destaque
+                            .border(2.dp, Color.Black, RoundedCornerShape(16.dp))
                     )
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    // 2. O texto com o código Hex
+
+                    // Mostra detalhe (opcional, pode ser útil para debug)
                     Text(
-                        text = "Hex: #${Integer.toHexString(capturedColor!!.toArgb()).uppercase()}",
+                        text = "Categoria detetada: $capturedColorName",
                         fontFamily = MineQuestFont,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "(Hex: #${Integer.toHexString(capturedColor!!.toArgb()).uppercase()})",
+                        fontFamily = MineQuestFont,
+                        fontSize = 12.sp,
+                        color = Color.Gray
                     )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = { showColorDialog = false },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220)) // Cor do tema
+                    onClick = {
+                        showColorDialog = false
+                        // AQUI PODES FUTURAMENTE DAR OS BLOCOS AO UTILIZADOR
+                        // Ex: viewModel.giveBlock(capturedColorName)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220))
                 ) {
-                    Text("OK", fontFamily = MineQuestFont, color = Color.White)
+                    Text("Receber Bloco", fontFamily = MineQuestFont, color = Color.White)
                 }
             },
-            containerColor = Color.White, // Fundo do diálogo
+            containerColor = Color.White,
             shape = RoundedCornerShape(16.dp)
         )
     }
@@ -487,26 +510,23 @@ fun MapScreen(
 
         Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(top = 100.dp, end = 16.dp)
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 1.dp, end = 32.dp)
         ) {
-            FloatingActionButton(
-                onClick = {
-                    // Verifica permissão antes de abrir
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                        cameraLauncher.launch()
-                    } else {
-                        permissionLauncher.launch(Manifest.permission.CAMERA)
+            Image(
+                painter = painterResource(id = R.drawable.icone_fotos), // A tua imagem
+                contentDescription = "Abrir Câmara",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clickable {
+
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            cameraLauncher.launch()
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     }
-                },
-                containerColor = Color.White,
-                contentColor = Color(0xFF513220) // Cor castanha do tema
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Abrir Câmara"
-                )
-            }
+            )
         }
 
         // ---------------------------
@@ -631,4 +651,53 @@ fun irParaLugar(
                 CameraUpdateFactory.newLatLngZoom(latLng, 17f)
             )
         }
+}
+
+
+// --- FUNÇÃO PARA DESCOBRIR A CATEGORIA DA COR ---
+
+fun getClosestColorName(color: Color): String {
+    // 1. Converter a cor do Jetpack Compose (0.0-1.0) para RGB (0-255)
+    val r = (color.red * 255).toInt()
+    val g = (color.green * 255).toInt()
+    val b = (color.blue * 255).toInt()
+
+    // 2. Converter para HSV (Matiz, Saturação, Brilho)
+    val hsv = FloatArray(3)
+    android.graphics.Color.RGBToHSV(r, g, b, hsv)
+
+    val hue = hsv[0]        // Cor (0 a 360 graus)
+    val saturation = hsv[1] // Intensidade (0.0 a 1.0)
+    val value = hsv[2]      // Brilho/Luminosidade (0.0 a 1.0)
+
+    // --- LOGICA DE CORES NEUTRAS (Preto, Branco, Cinzento) ---
+    // Se o brilho for muito baixo, é Preto
+    if (value < 0.20) return "Preto"
+
+    // Se a saturação for muito baixa, é Cinzento ou Branco (dependendo do brilho)
+    if (saturation < 0.15) {
+        return if (value > 0.85) "Branco" else "Cinzento"
+    }
+
+    // --- REGRA ESPECIAL PARA CASTANHO ---
+    // O Castanho é basicamente um Laranja ou Amarelo escuro.
+    // Se a cor for Laranja/Amarelo (15º a 60º) mas o brilho for menor que 70%, é Castanho.
+    if (hue in 15f..60f && value < 0.70) {
+        return "Castanho"
+    }
+    // Às vezes o castanho avermelhado aparece abaixo dos 15º
+    if (hue < 15f && value < 0.50 && saturation > 0.4) {
+        return "Castanho"
+    }
+
+    // --- CORES PELO CÍRCULO CROMÁTICO (HUE) ---
+    return when {
+        hue < 15f  -> "Vermelho"
+        hue < 45f  -> "Laranja"
+        hue < 75f  -> "Amarelo"
+        hue < 165f -> "Verde" // Apanha lima, verde escuro, ciano-esverdeado
+        hue < 260f -> "Azul"  // Apanha ciano, azul claro, azul escuro
+        hue < 330f -> "Roxo"  // Apanha magenta, violeta
+        else       -> "Vermelho" // Volta ao início do círculo (330-360)
+    }
 }
