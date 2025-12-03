@@ -1,6 +1,7 @@
 package com.example.minequest
 
 import android.Manifest
+import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -180,8 +182,10 @@ fun MapScreen(
 
         AlertDialog(
             onDismissRequest = { viewModel.clearMiningResult() },
+            modifier = Modifier.border(width = 4.dp, color = Color(0xFF513220), shape = RectangleShape),
+            shape = RectangleShape,
             title = {
-                // Mostra o nome da categoria (Ex: "Verde")
+
                 Text(
                     text = "Bloco Encontrado!",
                     fontFamily = MineQuestFont,
@@ -227,13 +231,14 @@ fun MapScreen(
                 Button(
                     onClick = { viewModel.clearMiningResult() },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)), // Verde Minecraft
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                            shape = RectangleShape,
                 ) {
                     Text("Collect", fontFamily = MineQuestFont, color = Color.White)
                 }
             },
             containerColor = Color.White,
-            shape = RoundedCornerShape(16.dp)
+
         )
     }
 
@@ -400,9 +405,6 @@ fun MapScreen(
 
 
 
-    // ---------------------------
-    // FUNÇÃO addMarker (CORRIGIDA)
-    // ---------------------------
 
     @Composable
     fun AddMarkerComposable(
@@ -467,12 +469,25 @@ fun MapScreen(
             val players by viewModel.players.collectAsState()
 
             players.forEach { user ->
+                val playerPos = LatLng(user.lat!!, user.lng!!)
                 Marker(
                     state = MarkerState(LatLng(user.lat!!, user.lng!!)),
                     title = user.username ?: "",
                     icon = getUserBitmap(getUserImage(user.profileImage ?: "")),
-                    anchor = Offset(0.5f, 0.5f)
+                    anchor = Offset(0.5f, 0.5f),
+                    onClick = {
+                        viewModel.setDestination(playerPos)
+
+
+                        currentLocation?.let { origem ->
+                            if (navigationEnabled) viewModel.Rota(origem, playerPos)
+                        }
+                        true
+                    }
+
+
                 )
+
             }
 
             // Destino
@@ -557,10 +572,29 @@ fun MapScreen(
                     query = it
                     sugestoes(it, placesClient, viewModel)
                 },
-                placeholder = { Text("Pesquisar aqui...") },
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontFamily = MineQuestFont,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                ),
+
+                placeholder = { Text("Pesquisar aqui...",  fontFamily = MineQuestFont,
+                    fontSize = 16.sp) },
+
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = Color.Black,
+                    unfocusedBorderColor = Color(0xFF513220),
+                    cursorColor = Color.Black
+                ),
+                shape = RectangleShape,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(40.dp)),
+                    .background(Color.White, RectangleShape)
+                    .border(2.dp, Color(0xFF513220), RectangleShape),
+
+
                 singleLine = true
             )
 
@@ -584,7 +618,7 @@ fun MapScreen(
 
         Box(
             modifier = Modifier
-                .align(Alignment.BottomEnd)
+                .align(Alignment.BottomStart)
                 .padding(bottom = 1.dp, end = 32.dp)
         ) {
             Image(
@@ -612,15 +646,18 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 90.dp)
-                    .fillMaxWidth(0.8f),
-                shape = RoundedCornerShape(14.dp)
+                    .fillMaxWidth(0.6f)
+                    .border(width = 4.dp, color = Color(0xFF513220), shape = RectangleShape),
+                shape = RoundedCornerShape(2.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Distância: $distanceText")
-                    Text("Tempo estimado: $durationText")
+                    Text("Distância: $distanceText",  fontFamily = MineQuestFont,
+                        fontSize = 16.sp)
+                    Text("Tempo estimado: $durationText",  fontFamily = MineQuestFont,
+                        fontSize = 16.sp)
                 }
             }
         }
@@ -635,7 +672,15 @@ fun MapScreen(
             Button(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+
                     .padding(16.dp),
+
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF513220),
+                    contentColor = Color.White
+                ),
+
                 onClick = {
                     viewModel.startNavigation()
                     currentLocation?.let { origem ->
@@ -645,7 +690,9 @@ fun MapScreen(
                     }
                 }
             ) {
-                Text("Ir para destino")
+                Text("vamos ate ali ",
+                    fontFamily = MineQuestFont,
+                    fontSize = 16.sp)
             }
         }
 
@@ -660,10 +707,18 @@ fun MapScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White
+                ),
+
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 onClick = { viewModel.stopNavigation() }
             ) {
-                Text("Cancelar viagem")
+                Text("Cancelar viagem",
+                    fontFamily = MineQuestFont,
+                    fontSize = 16.sp)
             }
         }
     }

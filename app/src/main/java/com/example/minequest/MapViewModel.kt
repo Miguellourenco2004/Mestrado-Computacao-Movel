@@ -176,6 +176,7 @@ class MapViewModel : ViewModel() {
                 "https://maps.googleapis.com/maps/api/directions/json" +
                         "?origin=${origem.latitude},${origem.longitude}" +
                         "&destination=${destino.latitude},${destino.longitude}" +
+                        "&mode=walking"+
                         "&key=AIzaSyDopLW7DqJf2wQG97_iiOuEKpYWj__arpo"
 
             val request = Request.Builder().url(url).build()
@@ -378,7 +379,7 @@ class MapViewModel : ViewModel() {
                 }
             }
             "Verde" -> {
-                // 80% Terra (Grama), 20% Esmeralda
+                // 80% Terra, 20% Esmeralda
                 when {
                     rand < 0.55 -> Triple("dirt", "Terra", 1)
                     rand < 0.90  -> Triple("grace", "Relva", 1)
@@ -387,7 +388,7 @@ class MapViewModel : ViewModel() {
             }
 
             "Azul" -> {
-                // 80% Lapis (vamos fingir que é pedra azul), 20% Diamante
+                // 80% Lapis, 20% Diamante
                 when {
                     rand < 0.80 -> Triple("lapis", "Lápis-lazúli", 5)
                     else -> Triple("diamond", "Diamante", 50) // Muito XP!
