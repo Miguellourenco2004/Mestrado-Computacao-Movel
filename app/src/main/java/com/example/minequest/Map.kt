@@ -18,6 +18,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -59,15 +60,16 @@ fun MapScreen(
 
 
 
-
+    val miningResult by viewModel.miningResult.collectAsState()
     val context = LocalContext.current
-
+    val miningError by viewModel.miningError.collectAsState()
 
 
     // Estados para a cor
     var capturedColor by remember { mutableStateOf<Color?>(null) }
-    var capturedColorName by remember { mutableStateOf("") } // <--- NOVO
+    var capturedColorName by remember { mutableStateOf("") }
     var showColorDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
     // ... (código existente de loadMarkers, etc.) ...
 
     // --- CÂMARA COM PALETTE ---
@@ -85,6 +87,9 @@ fun MapScreen(
                     capturedColor = colorObj
                     // AQUI CHAMAMOS A FUNÇÃO DE AGRUPAMENTO
                     capturedColorName = getClosestColorName(colorObj)
+
+
+                    viewModel.mineBlockFromColor(capturedColorName)
 
                     showColorDialog = true
                 } else {
@@ -106,56 +111,125 @@ fun MapScreen(
     }
 
 
+    // ...
 
-    // --- DIÁLOGO ATUALIZADO ---
-    if (showColorDialog && capturedColor != null) {
+
+
+    LaunchedEffect(miningError) {
+        if (miningError != null) {
+            showErrorDialog = true
+        }
+    }
+
+    if (showErrorDialog && miningError != null) {
         AlertDialog(
-            onDismissRequest = { showColorDialog = false },
+            onDismissRequest = {
+                showErrorDialog = false
+                viewModel.clearMiningError()
+            },
             title = {
-                // Mostra o nome da categoria (Ex: "Verde")
                 Text(
-                    text = "Cor: $capturedColorName",
+                    text = "Aguarda!",
                     fontFamily = MineQuestFont,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
+                    fontSize = 24.sp,
+                    color = Color.Red
                 )
             },
             text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .background(capturedColor!!, RoundedCornerShape(16.dp))
-                            .border(2.dp, Color.Black, RoundedCornerShape(16.dp))
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Tempo",
+                        tint = Color.Red,
+                        modifier = Modifier.size(48.dp)
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Mostra detalhe (opcional, pode ser útil para debug)
                     Text(
-                        text = "Categoria detetada: $capturedColorName",
+                        text = miningError!!,
                         fontFamily = MineQuestFont,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        text = "(Hex: #${Integer.toHexString(capturedColor!!.toArgb()).uppercase()})",
-                        fontFamily = MineQuestFont,
-                        fontSize = 12.sp,
-                        color = Color.Gray
+                        fontSize = 18.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        showColorDialog = false
-                        // AQUI PODES FUTURAMENTE DAR OS BLOCOS AO UTILIZADOR
-                        // Ex: viewModel.giveBlock(capturedColorName)
+                        showErrorDialog = false
+                        viewModel.clearMiningError()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Receber Bloco", fontFamily = MineQuestFont, color = Color.White)
+                    Text("Entendido", fontFamily = MineQuestFont, color = Color.White)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+    // --- DIÁLOGO  ---
+    if (miningResult != null) {
+
+        val result = miningResult!!
+
+        AlertDialog(
+            onDismissRequest = { viewModel.clearMiningResult() },
+            title = {
+                // Mostra o nome da categoria (Ex: "Verde")
+                Text(
+                    text = "Bloco Encontrado!",
+                    fontFamily = MineQuestFont,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    color = Color(0xFF513220),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+
+                    Image(
+                        painter = painterResource(id = result.imageRes),
+                        contentDescription = result.blockName,
+                        modifier = Modifier
+                            .size(120.dp)
+                            .padding(8.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Mostra detalhe (opcional, pode ser útil para debug)
+                    Text(
+                        text = "${result.quantity}x ${result.blockName}",
+                        fontFamily = MineQuestFont,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "+${result.xpEarned} XP",
+                        fontFamily = MineQuestFont,
+                        fontSize = 18.sp,
+                        color = Color(0xFFFFA500) // Cor Laranja/Ouro para XP
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { viewModel.clearMiningResult() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)), // Verde Minecraft
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Collect", fontFamily = MineQuestFont, color = Color.White)
                 }
             },
             containerColor = Color.White,

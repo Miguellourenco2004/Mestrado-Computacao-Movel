@@ -388,15 +388,25 @@ fun getImageResourceByName(name: String): Int {
 }
 
 // Gets the block image by it's name
-fun blockDrawable(id: String): Int {
+
+
+private fun blockDrawable(id: String): Int {
     return when (id) {
         "diamond" -> R.drawable.bloco_diamante
         "emerald" -> R.drawable.bloco_esmeralda
         "gold" -> R.drawable.bloco_ouro
         "coal" -> R.drawable.bloco_carvao
+        "iron" -> R.drawable.iron
+        "stone" -> R.drawable.bloco_pedra
+        "dirt" -> R.drawable.bloco_terra
+        "grace" -> R.drawable.grace
+        "wood" -> R.drawable.madeira
+        "lapis" -> R.drawable.lapis
+        "neder" -> R.drawable.netherite_b
         else -> R.drawable.bloco_terra
     }
 }
+
 
 // Divide the slots to a maximum of 64x block per stack
 fun splitIntoSlots(blockId: String, quantity: Int): List<InventorySlot> {

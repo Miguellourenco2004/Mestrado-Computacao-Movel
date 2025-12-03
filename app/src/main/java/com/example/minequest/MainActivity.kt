@@ -190,6 +190,8 @@ fun MineQuestBottomBar(navController: NavController) {
     }
 }
 
+
+
 @Preview(showBackground = true)
 @Composable
 fun MineQuestAppPreview() {
