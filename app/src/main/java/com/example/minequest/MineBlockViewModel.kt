@@ -63,7 +63,7 @@ class MineQuestViewModel : ViewModel() {
             }
     }
 
-    fun upgradePickaxe(custoDoUpgrade: Int, maxIndex: Int) {
+    fun upgradePickaxe(custoDoUpgrade: Int, custoDoUpgradebloco: Map<String, Int>, maxIndex: Int) {
         if (userId == null) return
 
         val currentIndex = _pickaxeIndex.value

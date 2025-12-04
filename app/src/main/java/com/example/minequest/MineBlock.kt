@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -35,7 +36,8 @@ val MineDarkGreen = Color(0xFF52A435)
 data class Picareta(
     val nome: String,
     val imagemRes: Int,
-    val custo: Int
+    val custo_int: Int,
+    val culto_blocos: Map<String, Int>,
 )
 
 @Composable
@@ -44,14 +46,51 @@ fun MineBlock(
     viewModel: MineQuestViewModel = viewModel() // Injeta o ViewModel
 ) {
 
+    val wood_pickaxe_blocks_cost = mapOf(
+        "grass" to 1
+    )
+
+    val stone_pickaxe_blocks_cost = mapOf(
+        "stone" to 10,
+        "wood" to 2
+    )
+
+    val iron_pickaxe_blocks_cost = mapOf(
+        "iron" to 20,
+        "wood" to 10,
+        "stone" to 20,
+    )
+
+    val gold_pickaxe_blocks_cost = mapOf(
+        "iron" to 5,
+        "wood" to 20,
+        "stone" to 20,
+        "gold" to 30,
+    )
+
+    val diamomd_pickaxe_blocks_cost = mapOf(
+        "wood" to 100,
+        "stone" to 50,
+        "diamond" to 40,
+    )
+    val netherite_pickaxe_blocks_cost = mapOf(
+        "wood" to 100,
+        "neder" to 50,
+        "diamond" to 10,
+        "emerald" to 10,
+        "iron" to 10,
+    )
+
+
+
     //Lista de picaretas
     val listaPicaretas = listOf(
-        Picareta("Wooden Pickaxe", R.drawable.madeira, 10),
-        Picareta("Stone Pickaxe", R.drawable.pedra, 50),
-        Picareta("Iron Pickaxe", R.drawable.ferro, 150),
-        Picareta("Gold Pickaxe", R.drawable.ouro, 500),
-        Picareta("Diamond Pickaxe", R.drawable.diamante, 1000),
-        Picareta("Netherite Pickaxe", R.drawable.netherite, 1500)
+        Picareta("Wooden Pickaxe", R.drawable.madeira, 0, wood_pickaxe_blocks_cost),
+        Picareta("Stone Pickaxe", R.drawable.pedra, 50, stone_pickaxe_blocks_cost),
+        Picareta("Iron Pickaxe", R.drawable.ferro, 150, iron_pickaxe_blocks_cost),
+        Picareta("Gold Pickaxe", R.drawable.ouro, 500, gold_pickaxe_blocks_cost),
+        Picareta("Diamond Pickaxe", R.drawable.diamante, 1000, diamomd_pickaxe_blocks_cost),
+        Picareta("Netherite Pickaxe", R.drawable.netherite, 1500, netherite_pickaxe_blocks_cost)
     )
 
     // --- LER ESTADOS DO VIEWMODEL ---
@@ -67,7 +106,8 @@ fun MineBlock(
 
     val picaretaAtual = listaPicaretas.getOrNull(indiceAtual) ?: listaPicaretas.first()
     val proximaPicareta = listaPicaretas.getOrNull(indiceAtual + 1)
-    val custoProximoUpgrade = proximaPicareta?.custo ?: 0
+    val custoProximoUpgrade = proximaPicareta?.custo_int ?: 0
+    val custoBlocoProximoUpgrade = proximaPicareta?.culto_blocos ?: emptyMap()
 
     val infiniteTransition = rememberInfiniteTransition(label = "PickaxeWobble")
 
@@ -155,6 +195,7 @@ fun MineBlock(
                         onClick = {
                             viewModel.upgradePickaxe(
                                 custoDoUpgrade = custoProximoUpgrade,
+                                custoDoUpgradebloco = custoBlocoProximoUpgrade,
                                 maxIndex = listaPicaretas.size - 1
                             )
                         },
@@ -172,14 +213,48 @@ fun MineBlock(
                     ) {
                         Text(text = "Upgrade", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
                     }
-                    Text(
-                        text = "Cost: $custoProximoUpgrade XP",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp),
-                        fontFamily = MineQuestFont
-                    )
+                    Column (
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ){
+                        Text(
+                            text = "Cost: $custoProximoUpgrade XP",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 16.dp),
+                            fontFamily = MineQuestFont,
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row (
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            custoBlocoProximoUpgrade.forEach { (blockId, quantidade) ->
+                                Image(
+                                    painter = painterResource(id = blockDrawable(blockId)),
+                                    contentDescription = blockId,
+                                    modifier = Modifier.size(32.dp)
+                                )
+
+                                Spacer(modifier = Modifier.width(3.dp))
+
+                                Text(
+                                    text = "x$quantidade",
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = MineQuestFont,
+                                    modifier = Modifier
+                                )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                            }
+                        }
+                    }
+
 
                 } else {
                     Spacer(modifier = Modifier.height(30.dp))
@@ -277,5 +352,23 @@ fun MineBlock(
                 }
             }
         }
+    }
+}
+
+
+private fun blockDrawable(id: String): Int {
+    return when (id) {
+        "diamond" -> R.drawable.bloco_diamante
+        "emerald" -> R.drawable.bloco_esmeralda
+        "gold" -> R.drawable.bloco_ouro
+        "coal" -> R.drawable.bloco_carvao
+        "iron" -> R.drawable.iron
+        "stone" -> R.drawable.bloco_pedra
+        "dirt" -> R.drawable.bloco_terra
+        "grass" -> R.drawable.grace
+        "wood" -> R.drawable.wood
+        "lapis" -> R.drawable.lapis
+        "neder" -> R.drawable.netherite_b
+        else -> R.drawable.bloco_terra
     }
 }
