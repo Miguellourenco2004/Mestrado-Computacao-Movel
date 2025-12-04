@@ -90,7 +90,7 @@ class MineQuestViewModel : ViewModel() {
                     _errorMessage.value = "Erro de rede. Tenta novamente."
                 }
         } else {
-            _errorMessage.value = "Não tens pontos de XP necessários!"
+            _errorMessage.value = "Não tens pontos de XP ou os blocos necessários!"
         }
     }
 

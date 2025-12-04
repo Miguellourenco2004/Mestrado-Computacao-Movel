@@ -72,7 +72,6 @@ fun getPickaxeImage(index: Int): Int {
     }
 }
 
-// --- UTILS: Imagens dos Blocos (Igual ao teu Profile) ---
 fun getBlockDrawableChat(id: String): Int {
     return when (id) {
         "diamond" -> R.drawable.bloco_diamante
@@ -83,7 +82,6 @@ fun getBlockDrawableChat(id: String): Int {
     }
 }
 
-// --- UTILS: Lógica das Imagens de Perfil ---
 fun getProfileDrawable(name: String): Int {
     return when (name) {
         "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
@@ -356,7 +354,6 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
     var inventorySlots by remember { mutableStateOf<List<ChatInventorySlot>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Carrega o inventário deste jogador específico
     LaunchedEffect(message.senderId) {
         if (message.senderId.isNotEmpty()) {
             database.child(message.senderId).child("inventory").get()
@@ -380,18 +377,17 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(ChatBackground, RoundedCornerShape(16.dp))
+                .fillMaxHeight(0.85f)
+                .background(MineDarkGreen, RoundedCornerShape(16.dp))
                 .border(3.dp, BorderColor, RoundedCornerShape(16.dp))
                 .padding(24.dp)
         ) {
-            // Adicionado scroll caso o inventário seja grande
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                // Título
                 Text(
                     text = "Player Profile",
                     fontFamily = MineQuestFont,
@@ -401,7 +397,6 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
                     modifier = Modifier.padding(bottom = 24.dp)
                 )
 
-                // Imagem
                 Image(
                     painter = painterResource(id = getProfileDrawable(message.profileImageName)),
                     contentDescription = "Large Avatar",
@@ -414,7 +409,6 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Nome
                 Text(
                     text = message.senderName,
                     fontFamily = MineQuestFont,
@@ -425,7 +419,6 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Picareta (Simples)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Image(
                         painter = painterResource(id = getPickaxeImage(message.pickaxeIndex)),
@@ -443,7 +436,6 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- INVENTÁRIO DO JOGADOR ---
                 Text(
                     text = "Inventory",
                     fontFamily = MineQuestFont,
@@ -458,7 +450,7 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
                 } else if (inventorySlots.isEmpty()) {
                     Text("Empty Inventory", color = Color.Gray, fontFamily = MineQuestFont)
                 } else {
-                    // Grelha de Inventário (4 colunas para caber no dialog)
+                    // AQUI CHAMAMOS A GRELHA SEM LIMITES
                     ChatInventoryGrid(slots = inventorySlots, columns = 4)
                 }
 
@@ -477,9 +469,11 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
     }
 }
 
-// --- GRELHA DE INVENTÁRIO DO CHAT ---
 @Composable
-fun ChatInventoryGrid(slots: List<ChatInventorySlot>, rows: Int = 3, columns: Int = 4) {
+fun ChatInventoryGrid(slots: List<ChatInventorySlot>, columns: Int = 4) {
+    val rowsNeeded = (slots.size + columns - 1) / columns
+    val rows = maxOf(rowsNeeded, 3)
+
     val totalSlots = rows * columns
     val filledSlots = slots + List((totalSlots - slots.size).coerceAtLeast(0)) { null }
 
@@ -489,10 +483,7 @@ fun ChatInventoryGrid(slots: List<ChatInventorySlot>, rows: Int = 3, columns: In
             .border(2.dp, Color.Black)
             .padding(4.dp)
     ) {
-        // Mostra no máximo 'rows' linhas para não ocupar o ecrã todo
-        val displayRows = (filledSlots.size + columns - 1) / columns
-
-        for (row in 0 until minOf(rows, displayRows)) {
+        for (row in 0 until rows) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -506,7 +497,7 @@ fun ChatInventoryGrid(slots: List<ChatInventorySlot>, rows: Int = 3, columns: In
                     }
                 }
             }
-            if (row < displayRows - 1) Spacer(modifier = Modifier.height(2.dp))
+            if (row < rows - 1) Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
@@ -515,7 +506,7 @@ fun ChatInventoryGrid(slots: List<ChatInventorySlot>, rows: Int = 3, columns: In
 fun ChatInventorySlotView(slot: ChatInventorySlot?, modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .aspectRatio(1f) // Mantém quadrado
+            .aspectRatio(1f)
             .background(Color(0xFF8B8B8B))
             .border(1.dp, Color(0xFF373737))
             .padding(1.dp)
@@ -540,7 +531,6 @@ fun ChatInventorySlotView(slot: ChatInventorySlot?, modifier: Modifier = Modifie
     }
 }
 
-// Função auxiliar para dividir stacks (igual ao Profile)
 fun splitIntoSlotsChat(blockId: String, quantity: Int): List<ChatInventorySlot> {
     val slots = mutableListOf<ChatInventorySlot>()
     var remaining = quantity
@@ -552,7 +542,6 @@ fun splitIntoSlotsChat(blockId: String, quantity: Int): List<ChatInventorySlot> 
     return slots
 }
 
-// --- CHAT BUBBLE (Mantém-se igual) ---
 @Composable
 fun ChatBubble(message: Message, onHeaderClick: () -> Unit) {
     val bubbleColor = if (message.isMine) MyBubbleColor else OtherBubbleColor
