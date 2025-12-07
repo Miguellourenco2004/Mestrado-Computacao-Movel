@@ -296,6 +296,7 @@ fun MineBlock(
                         fontFamily = MineQuestFont,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
