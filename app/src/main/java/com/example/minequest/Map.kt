@@ -7,6 +7,10 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -28,10 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -48,6 +55,7 @@ import com.google.android.libraries.places.api.net.*
 import com.google.maps.android.compose.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import kotlin.math.sqrt
 
 
 @SuppressLint("MissingPermission")
@@ -65,7 +73,8 @@ fun MapScreen(
     val miningResult by viewModel.miningResult.collectAsState()
     val context = LocalContext.current
     val miningError by viewModel.miningError.collectAsState()
-
+    var showMiningShakeDialog by remember { mutableStateOf(false) }
+    val nearbyMarker by viewModel.nearbyMarker.collectAsState()
 
     // Estados para a cor
     var capturedColor by remember { mutableStateOf<Color?>(null) }
@@ -101,14 +110,14 @@ fun MapScreen(
         }
     }
 
-// Launcher para pedir permissão de câmara se necessário
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
             cameraLauncher.launch()
         } else {
-            Toast.makeText(context, "Permissão de câmara necessária", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -131,7 +140,7 @@ fun MapScreen(
             },
             title = {
                 Text(
-                    text = "Aguarda!",
+                    text = stringResource(id = R.string.wait),
                     fontFamily = MineQuestFont,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
@@ -143,7 +152,7 @@ fun MapScreen(
 
                     Icon(
                         imageVector = Icons.Default.AccessTime,
-                        contentDescription = "Tempo",
+                        contentDescription = stringResource(id = R.string.time),
                         tint = Color.Red,
                         modifier = Modifier.size(48.dp)
                     )
@@ -168,7 +177,7 @@ fun MapScreen(
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Entendido", fontFamily = MineQuestFont, color = Color.White)
+                    Text(stringResource(id = R.string.got_it), fontFamily = MineQuestFont, color = Color.White)
                 }
             },
             containerColor = Color.White,
@@ -187,7 +196,7 @@ fun MapScreen(
             title = {
 
                 Text(
-                    text = "Bloco Encontrado!",
+                    text = stringResource(id = R.string.block_found),
                     fontFamily = MineQuestFont,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
@@ -223,14 +232,14 @@ fun MapScreen(
                         text = "+${result.xpEarned} XP",
                         fontFamily = MineQuestFont,
                         fontSize = 18.sp,
-                        color = Color(0xFFFFA500) // Cor Laranja/Ouro para XP
+                        color = Color(0xFFFFA500)
                     )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = { viewModel.clearMiningResult() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)), // Verde Minecraft
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)),
                     modifier = Modifier.fillMaxWidth(),
                             shape = RectangleShape,
                 ) {
@@ -526,6 +535,16 @@ fun MapScreen(
                     currentLocation = currentLocation,
                     viewModel = viewModel
                 )
+                Circle(
+                    center = LatLng(m.lat, m.lng),
+                    radius = 200.0,
+                    strokeColor = Color(0xFF513220),
+                    fillColor = Color(0x2252A435), // Verde transparente
+                    strokeWidth = 2f
+                )
+
+
+
             }
 
             setubalMarkers.forEach { m ->
@@ -578,7 +597,8 @@ fun MapScreen(
                     color = Color.Black
                 ),
 
-                placeholder = { Text("Pesquisar aqui...",  fontFamily = MineQuestFont,
+                placeholder = { Text(stringResource(id = R.string.search_here),
+                    fontFamily = MineQuestFont,
                     fontSize = 16.sp) },
 
                 colors = OutlinedTextFieldDefaults.colors(
@@ -623,7 +643,7 @@ fun MapScreen(
         ) {
             Image(
                 painter = painterResource(id = R.drawable.icone_fotos), // A tua imagem
-                contentDescription = "Abrir Câmara",
+                contentDescription = stringResource(id = R.string.open_camera),
                 modifier = Modifier
                     .size(120.dp)
                     .clickable {
@@ -654,9 +674,9 @@ fun MapScreen(
                     modifier = Modifier.padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Distância: $distanceText",  fontFamily = MineQuestFont,
+                    Text(stringResource(id = R.string.distance)+"$distanceText",  fontFamily = MineQuestFont,
                         fontSize = 16.sp)
-                    Text("Tempo estimado: $durationText",  fontFamily = MineQuestFont,
+                    Text(stringResource(id = R.string.estimated_time)+"$durationText",  fontFamily = MineQuestFont,
                         fontSize = 16.sp)
                 }
             }
@@ -690,7 +710,7 @@ fun MapScreen(
                     }
                 }
             ) {
-                Text("vamos ate ali ",
+                Text(stringResource(id = R.string.go_there),
                     fontFamily = MineQuestFont,
                     fontSize = 16.sp)
             }
@@ -716,11 +736,60 @@ fun MapScreen(
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 onClick = { viewModel.stopNavigation() }
             ) {
-                Text("Cancelar viagem",
+                Text(stringResource(id = R.string.cancel_trip),
                     fontFamily = MineQuestFont,
                     fontSize = 16.sp)
             }
         }
+
+        if (nearbyMarker != null){
+            Button(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 16.dp)
+                   // .height(54.dp)
+                    .border(
+                        width = 3.dp,
+                        color = Color(0xFF513220),
+                        shape = RectangleShape
+                    ),
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
+                shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White, // Fundo Branco
+                    contentColor = Color(0xFF513220) // Cor do texto (Castanho para combinar)
+                ),
+                onClick = {
+                    val iconRes = getIconForMarker(nearbyMarker!!.id)
+                    viewModel.mineBlockFromStructure(iconRes)
+                }
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // MUDANÇA IMPORTANTE: Usar 'Image' em vez de 'Icon' para manter as cores originais
+                    Image(
+                        painter = painterResource(id = R.drawable.diamond_pickaxe), //
+                        contentDescription = "Mine",
+                        modifier = Modifier.size(24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    Text(
+                        text = "MINERAR", // Texto sugerido
+                        fontFamily = MineQuestFont,
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+
+
     }
 }
 
@@ -830,3 +899,12 @@ fun getClosestColorName(color: Color): String {
         else       -> "Vermelho" // Volta ao início do círculo (330-360)
     }
 }
+
+
+
+
+
+
+
+
+
