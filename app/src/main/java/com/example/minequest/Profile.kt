@@ -428,11 +428,11 @@ private fun blockDrawable(id: String): Int {
 
 private fun pickaxeDrawable(index: Int): Int {
     return when(index) {
-        1 -> R.drawable.madeira
-        2 -> R.drawable.pedra
-        3 -> R.drawable.ferro
-        4 -> R.drawable.ouro
-        5 -> R.drawable.diamante
+        0 -> R.drawable.madeira
+        1 -> R.drawable.pedra
+        2 -> R.drawable.ferro
+        3-> R.drawable.ouro
+        4 -> R.drawable.diamante
         else -> R.drawable.netherite
     }
 }

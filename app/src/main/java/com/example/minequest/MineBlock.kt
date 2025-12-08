@@ -31,6 +31,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import com.example.minequest.ui.theme.MineQuestFont
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.graphics.RectangleShape
 
 val MineDarkGreen = Color(0xFF52A435)
 
@@ -159,12 +160,12 @@ fun MineBlock(
                         .padding(vertical = 8.dp) // Mantém o padding
                         .background( //
                             color = Color(0xFF323232),
-                            shape = RoundedCornerShape(16.dp) // Cantos arredondados
+                            shape = RectangleShape// Cantos arredondados
                         )
                         .border(
                             width = 2.dp,
                             color = Color(0xFF6B3B25),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RectangleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
@@ -201,7 +202,7 @@ fun MineBlock(
                             )
                         },
                         colors = ButtonDefaults.buttonColors(Color(0xFF323232)),
-                        shape = RoundedCornerShape(40.dp),
+                        shape = RectangleShape,
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .height(70.dp)
@@ -209,7 +210,7 @@ fun MineBlock(
                             .border(
                                 width = 2.dp,
                                 color = Color(0xFF6B3B25),
-                                shape = RoundedCornerShape(40.dp)
+                                shape = RectangleShape
                             ),
                     ) {
                         Text(text = "Upgrade", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
@@ -319,12 +320,12 @@ fun MineBlock(
                         .fillMaxWidth()
                         .background(
                             color = Color(0xFF323232),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RectangleShape
                         )
                         .border(
                             width = 2.dp,
                             color = Color(0xFF6B3B25),
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RectangleShape
                         )
                         .padding(vertical = 12.dp, horizontal = 4.dp)
                 ) {

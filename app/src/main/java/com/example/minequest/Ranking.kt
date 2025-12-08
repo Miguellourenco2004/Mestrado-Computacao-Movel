@@ -38,7 +38,7 @@ import com.example.minequest.ui.theme.MineQuestFont
 @Composable
 fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
     val database = FirebaseDatabase.getInstance().getReference("users")
-
+    val topint = 7;
     // Lista de topPlayers: username, XP, UID
     var topPlayers by remember { mutableStateOf<List<Triple<String, Int, String>>>(emptyList()) }
 
@@ -53,7 +53,7 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
                     tempList.add(Triple(username, pontosXP, uid))
                 }
 
-                topPlayers = tempList.sortedByDescending { it.second }.take(10)
+                topPlayers = tempList.sortedByDescending { it.second }.take(topint)
             }
             .addOnFailureListener {
                 topPlayers = emptyList()
@@ -68,7 +68,7 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "🏆 Ranking - Top 10 Players",
+                text = "🏆 Ranking - Top $topint Players",
                 fontFamily = MineQuestFont,
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White

@@ -21,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -285,8 +286,8 @@ fun Chat(navController: NavHostController) {
         Box(
             modifier = Modifier
                 .weight(1f)
-                .background(Color(0x80000000), RoundedCornerShape(16.dp))
-                .border(2.dp, BorderColor, RoundedCornerShape(16.dp))
+                .background(Color(0x80000000), RectangleShape)
+                .border(2.dp, BorderColor,  RectangleShape)
                 .padding(8.dp)
         ) {
             LazyColumn(
@@ -321,8 +322,8 @@ fun Chat(navController: NavHostController) {
                 modifier = Modifier
                     .weight(1f)
                     .height(50.dp)
-                    .background(OtherBubbleColor, RoundedCornerShape(25.dp))
-                    .border(2.dp, BorderColor, RoundedCornerShape(25.dp))
+                    .background(OtherBubbleColor,  RectangleShape)
+                    .border(2.dp, BorderColor,  RectangleShape)
                     .padding(horizontal = 20.dp, vertical = 14.dp),
                 singleLine = true
             )
@@ -334,11 +335,11 @@ fun Chat(navController: NavHostController) {
                     viewModel.sendMessage(inputText)
                     inputText = ""
                 },
-                shape = RoundedCornerShape(50),
+                shape =  RectangleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = MyBubbleColor),
                 modifier = Modifier
                     .size(50.dp)
-                    .border(2.dp, BorderColor, RoundedCornerShape(50)),
+                    .border(2.dp, BorderColor,  RectangleShape),
                 contentPadding = PaddingValues(0.dp)
             ) {
                 Icon(Icons.Default.Send, "Send", tint = Color.White)
@@ -378,8 +379,8 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.85f)
-                .background(MineDarkGreen, RoundedCornerShape(16.dp))
-                .border(3.dp, BorderColor, RoundedCornerShape(16.dp))
+                .background(MineDarkGreen,  RectangleShape)
+                .border(3.dp, BorderColor,  RectangleShape)
                 .padding(24.dp)
         ) {
             Column(
@@ -402,8 +403,8 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
                     contentDescription = "Large Avatar",
                     modifier = Modifier
                         .size(100.dp)
-                        .border(2.dp, BorderColor, RoundedCornerShape(8.dp))
-                        .background(Color(0xFF323232), RoundedCornerShape(8.dp))
+                        .border(2.dp, BorderColor,  RectangleShape)
+                        .background(Color(0xFF323232),  RectangleShape)
                         .padding(8.dp)
                 )
 
@@ -459,7 +460,7 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = BorderColor),
-                    shape = RoundedCornerShape(8.dp),
+                    shape =  RectangleShape,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Close", fontFamily = MineQuestFont, color = Color.White)
