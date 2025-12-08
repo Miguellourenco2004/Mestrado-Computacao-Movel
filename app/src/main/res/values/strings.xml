@@ -41,5 +41,6 @@
     <string name="estimated_time">Estimated time:</string>
     <string name="go_there">Let\'s go there</string>
     <string name="cancel_trip">Cancel trip</string>
+    <string name="trade">TRADE</string>
 
 </resources>
