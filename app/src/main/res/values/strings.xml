@@ -1,3 +1,12 @@
 <resources>
     <string name="app_name">MineQuest</string>
+    <string name="registo">Register</string>
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirmar_passoword">Confirm Password</string>
+    <string name="username">Username</string>
+
+
+
 </resources>

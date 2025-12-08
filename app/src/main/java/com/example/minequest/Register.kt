@@ -16,6 +16,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.example.minequest.navigation.Screens
 import com.example.minequest.ui.theme.MineQuestFont
+import androidx.compose.ui.res.stringResource
+
 
 @Composable
 fun RegisterScreen(navController: NavController) {
@@ -36,13 +38,13 @@ fun RegisterScreen(navController: NavController) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont, color = Color(0xFF513220))
+            Text(stringResource(id = R.string.registo), style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont, color = Color(0xFF513220))
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Username", fontFamily = MineQuestFont,color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.username), fontFamily = MineQuestFont,color = Color(0xFF513220)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +70,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.email), fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -94,7 +96,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.password), fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier
@@ -121,7 +123,7 @@ fun RegisterScreen(navController: NavController) {
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirm Password", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.confirmar_passoword), fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier
@@ -223,7 +225,7 @@ fun RegisterScreen(navController: NavController) {
                 ),
                 shape = RectangleShape,
             ) {
-                Text("Register", fontFamily = MineQuestFont)
+                Text(stringResource(id = R.string.registo), fontFamily = MineQuestFont)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
