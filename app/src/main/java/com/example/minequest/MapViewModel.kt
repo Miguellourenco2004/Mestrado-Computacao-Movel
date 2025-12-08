@@ -424,7 +424,7 @@ class MapViewModel : ViewModel() {
             "emerald" -> R.drawable.bloco_esmeralda
             "gold" -> R.drawable.bloco_ouro
             "coal" -> R.drawable.bloco_carvao
-            "iron" -> R.drawable.iron
+            "iron" -> R.drawable.bloco_iron
             "stone" -> R.drawable.bloco_pedra
             "dirt" -> R.drawable.bloco_terra
             "grace" -> R.drawable.grace

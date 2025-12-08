@@ -30,6 +30,7 @@ import androidx.navigation.NavController
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 import com.example.minequest.ui.theme.MineQuestFont
+import androidx.compose.foundation.layout.FlowRow
 
 val MineDarkGreen = Color(0xFF52A435)
 
@@ -227,34 +228,38 @@ fun MineBlock(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Row (
-                            modifier = Modifier.padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            custoBlocoProximoUpgrade.forEach { (blockId, quantidade) ->
-                                Image(
-                                    painter = painterResource(id = blockDrawable(blockId)),
-                                    contentDescription = blockId,
-                                    modifier = Modifier.size(32.dp)
-                                )
+                        Column {
+                            custoBlocoProximoUpgrade
+                                .toList()
+                                .chunked(4)
+                                .forEach { linha ->
 
-                                Spacer(modifier = Modifier.width(3.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        linha.forEach { (blockId, quantidade) ->
 
-                                Text(
-                                    text = "x$quantidade",
-                                    color = Color.White,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    fontFamily = MineQuestFont,
-                                    modifier = Modifier
-                                )
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Image(
+                                                    painter = painterResource(id = blockDrawable(blockId)),
+                                                    contentDescription = blockId,
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(3.dp))
+                                                Text(
+                                                    text = "x$quantidade",
+                                                    color = Color.White,
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFamily = MineQuestFont
+                                                )
+                                            }
 
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                        }
+                                    }
+                                }
                         }
-                    }
 
+                    }
 
                 } else {
                     Spacer(modifier = Modifier.height(30.dp))
@@ -269,8 +274,12 @@ fun MineBlock(
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            fontFamily = MineQuestFont
+                            fontFamily = MineQuestFont,
+                            textAlign = TextAlign.Center,
                         )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         Text(
                             text = "Congratulations!",
                             color = Color.White,
@@ -278,7 +287,7 @@ fun MineBlock(
                             fontWeight = FontWeight.Bold,
                             fontFamily = MineQuestFont
                         )
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(15.dp))
 
                         Image(
                             painter = painterResource(id = R.drawable.steve),
@@ -363,7 +372,7 @@ private fun blockDrawable(id: String): Int {
         "emerald" -> R.drawable.bloco_esmeralda
         "gold" -> R.drawable.bloco_ouro
         "coal" -> R.drawable.bloco_carvao
-        "iron" -> R.drawable.iron
+        "iron" -> R.drawable.bloco_iron
         "stone" -> R.drawable.bloco_pedra
         "dirt" -> R.drawable.bloco_terra
         "grass" -> R.drawable.grace

@@ -71,11 +71,17 @@ fun Profile(
         }
     }
 
+    var pickaxeIndex by remember { mutableIntStateOf(1) }
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
     // Carrega o inventário do utilizador
     LaunchedEffect(auth.currentUser, reloadTrigger) {
         auth.currentUser?.let { user ->
+            database.child(user.uid).child("pickaxeIndex").get()
+                .addOnSuccessListener { snap ->
+                    pickaxeIndex = snap.getValue(Int::class.java) ?: 1
+                }
+
             database.child(user.uid).child("inventory").get()
                 .addOnSuccessListener { snapshot ->
                     val slots = mutableListOf<InventorySlot>()
@@ -84,7 +90,14 @@ fun Profile(
                         val quantity = item.getValue(Int::class.java) ?: 0
                         slots += splitIntoSlots(blockId, quantity)
                     }
-                    inventorySlots = slots
+
+                    val pickaxeSlot = InventorySlot("pickaxe_$pickaxeIndex", 1)
+                    val finalList = mutableListOf<InventorySlot>()
+
+                    finalList += pickaxeSlot
+                    finalList += slots
+
+                    inventorySlots = finalList
                 }
         }
     }
@@ -131,6 +144,7 @@ fun Profile(
             InventoryGrid(
                 slots = inventorySlots,
                 onSlotClick = { slot ->
+                    if (slot.blockId.startsWith("pickaxe_")) return@InventoryGrid
                     slotToDrop = slot
                 }
             )
@@ -391,19 +405,35 @@ fun getImageResourceByName(name: String): Int {
 
 
 private fun blockDrawable(id: String): Int {
+    if (id.startsWith("pickaxe_")) {
+        val index = id.removePrefix("pickaxe_").toIntOrNull() ?: 1
+        return pickaxeDrawable(index)
+    }
+
     return when (id) {
         "diamond" -> R.drawable.bloco_diamante
         "emerald" -> R.drawable.bloco_esmeralda
         "gold" -> R.drawable.bloco_ouro
         "coal" -> R.drawable.bloco_carvao
-        "iron" -> R.drawable.iron
+        "iron" -> R.drawable.bloco_iron
         "stone" -> R.drawable.bloco_pedra
         "dirt" -> R.drawable.bloco_terra
         "grace" -> R.drawable.grace
-        "wood" -> R.drawable.madeira
+        "wood" -> R.drawable.wood
         "lapis" -> R.drawable.lapis
         "neder" -> R.drawable.netherite_b
         else -> R.drawable.bloco_terra
+    }
+}
+
+private fun pickaxeDrawable(index: Int): Int {
+    return when(index) {
+        1 -> R.drawable.madeira
+        2 -> R.drawable.pedra
+        3 -> R.drawable.ferro
+        4 -> R.drawable.ouro
+        5 -> R.drawable.diamante
+        else -> R.drawable.netherite
     }
 }
 
