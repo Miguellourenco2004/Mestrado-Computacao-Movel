@@ -33,6 +33,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import com.example.minequest.ui.theme.MineQuestFont
+import androidx.compose.ui.res.stringResource
+
 
 
 @Composable
@@ -68,7 +70,7 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "🏆 Ranking - Top $topint Players",
+                text = stringResource( id = R.string.top_message, topint),
                 fontFamily = MineQuestFont,
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White

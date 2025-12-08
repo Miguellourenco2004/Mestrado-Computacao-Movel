@@ -17,6 +17,8 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.example.minequest.navigation.Screens
 import com.example.minequest.ui.theme.MineQuestFont
+import androidx.compose.ui.res.stringResource
+
 
 @Composable
 fun LoginScreen(navController: NavController) {
@@ -36,13 +38,13 @@ fun LoginScreen(navController: NavController) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Login", style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont, color = Color(0xFF513220), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
+            Text(stringResource(id = R.string.login), style = MaterialTheme.typography.headlineMedium, fontFamily = MineQuestFont, color = Color(0xFF513220), fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.email), fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -69,7 +71,7 @@ fun LoginScreen(navController: NavController) {
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Password", fontFamily = MineQuestFont, color = Color(0xFF513220)) },
+                label = { Text(stringResource(id = R.string.password), fontFamily = MineQuestFont, color = Color(0xFF513220)) },
                 singleLine = true,
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier
@@ -118,13 +120,13 @@ fun LoginScreen(navController: NavController) {
                 ),
                 shape = RectangleShape
             ) {
-                Text("Login", fontFamily = MineQuestFont)
+                Text(stringResource(id = R.string.password), fontFamily = MineQuestFont)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate(Screens.Register.route) }) {
-                Text("Não tens conta? Regista-te", fontFamily = MineQuestFont, color = Color(0xFF513220))
+                Text(stringResource(id = R.string.no_account), fontFamily = MineQuestFont, color = Color(0xFF513220))
             }
 
             if (loading) {

@@ -1,12 +1,54 @@
 <resources>
     <string name="app_name">MineQuest</string>
+
+    // Geral
+    <string name="cancel">Cancel</string>
+    <string name="minequest">MineQuest</string>
+
+    // Registo e Login
     <string name="registo">Register</string>
     <string name="login">Login</string>
+    <string name="logout">Logout</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="confirmar_passoword">Confirm Password</string>
     <string name="username">Username</string>
+    <string name="no_account">Não tens conta? Regista-te</string>
 
+    // Profile
+    <string name="xp">XP Points</string>
+    <string name="drop_item">Drop item?</string>
+    <string name="bloco">Block</string>
+    <string name="drop">Drop</string>
+
+    // Ranking
+    <string name="top_message">🏆 Ranking - Top %1$d Players</string>
+
+    // MineBlock View Model
+    <string name="no_xp_points">You don't have the necessary XP Points!</string>
+    <string name="no_block">You don't have the necessary blocks!</string>
+    <string name="no_xp_points_blocks">You don't have the necessary XP Points and Blocks!</string>
+
+    // Mineblock
+    <string name="upgrade">Upgrade</string>
+    <string name="congratulations">Congratulations!</string>
+    <string name="max_level">You have reached the max level!</string>
+    <string name="cost">Cost: %1$d XP</string>
+    <string name="all_pickaxes">All Pickaxes</string>
+
+    // Map
+
+    <string name="camera_permission_required">Camera permission required</string>
+    <string name="wait">Wait!</string>
+    <string name="time">Time</string>
+   <string name="got_it">Got it</string>
+    <string name="block_found">Block Found!</string>
+    <string name="search_here">Search here...</string>
+    <string name="open_camera">Open Camera</string>
+    <string name="distance">Distance:</string>
+    <string name="estimated_time">Estimated time:</string>
+    <string name="go_there">Let's go there</string>
+    <string name="cancel_trip">Cancel trip</string>
 
 
 </resources>

@@ -32,6 +32,8 @@ import com.google.firebase.database.FirebaseDatabase
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+
 
 
 @Composable
@@ -133,7 +135,7 @@ fun Profile(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = "$pontosXP XP Points",
+                text = "$pontosXP" + stringResource(id = R.string.xp),
                 fontFamily = MineQuestFont,
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color(0xFFFF9800)
@@ -165,7 +167,7 @@ fun Profile(
                 ),
                 shape = RectangleShape
             ) {
-                Text("Logout", fontFamily = MineQuestFont)
+                Text(stringResource(id = R.string.logout), fontFamily = MineQuestFont)
             }
         }
 
@@ -281,7 +283,7 @@ fun DropItemDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         shape = RectangleShape,
-        title = { Text(text = "Drop item?", fontFamily = MineQuestFont) },
+        title = { Text(text = stringResource(id = R.string.drop_item), fontFamily = MineQuestFont) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Image(
@@ -290,7 +292,7 @@ fun DropItemDialog(
                     modifier = Modifier.size(100.dp)
                 )
                 Spacer(modifier = Modifier.height(10.dp))
-                Text("BLock: ${slot.blockId}", fontFamily = MineQuestFont, fontSize = 20.sp)
+                Text(stringResource(id = R.string.bloco) + ": ${slot.blockId}", fontFamily = MineQuestFont, fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // --- ZONA DE INPUT (MENOS | TEXTO | MAIS) ---
@@ -356,7 +358,7 @@ fun DropItemDialog(
 
                 // Texto de ajuda (Ex: "Máx: 64")
                 Text(
-                    text = "Máx: ${maxQuantity.roundToInt()}",
+                    text = "Max: ${maxQuantity.roundToInt()}",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray,
                     modifier = Modifier.padding(top = 4.dp),
@@ -375,12 +377,12 @@ fun DropItemDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 shape = RectangleShape
             ) {
-                Text("Drop", fontFamily = MineQuestFont,  fontSize = 15.sp)
+                Text(stringResource(id = R.string.drop), fontFamily = MineQuestFont,  fontSize = 15.sp)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", fontFamily = MineQuestFont, fontSize = 15.sp)
+                Text(stringResource(id = R.string.cancel), fontFamily = MineQuestFont, fontSize = 15.sp)
             }
         }
     )

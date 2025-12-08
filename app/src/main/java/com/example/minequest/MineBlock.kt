@@ -32,6 +32,8 @@ import kotlinx.coroutines.delay
 import com.example.minequest.ui.theme.MineQuestFont
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.stringResource
+
 
 val MineDarkGreen = Color(0xFF52A435)
 
@@ -137,7 +139,7 @@ fun MineBlock(
 
             // Título "MineQuest"
             Text(
-                text = "MineQuest",
+                text = stringResource(id = R.string.minequest),
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -213,13 +215,13 @@ fun MineBlock(
                                 shape = RectangleShape
                             ),
                     ) {
-                        Text(text = "Upgrade", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
+                        Text(text = stringResource(id = R.string.upgrade), color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
                     }
                     Column (
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ){
                         Text(
-                            text = "Cost: $custoProximoUpgrade XP",
+                            text = stringResource(R.string.top_message, custoProximoUpgrade),
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
@@ -271,7 +273,7 @@ fun MineBlock(
                     ) {
 
                         Text(
-                            text = "You have reached the max level!",
+                            text = stringResource(id = R.string.max_level),
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
@@ -282,7 +284,7 @@ fun MineBlock(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = "Congratulations!",
+                            text = stringResource(id = R.string.congratulations),
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
@@ -313,7 +315,7 @@ fun MineBlock(
 
                 Spacer(modifier = Modifier.weight(1f)) // Empurra a Row para baixo
 
-                Text(text = "All Pickaxes", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
+                Text(text = stringResource(id = R.string.all_pickaxes), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
 
                 Box(
                     modifier = Modifier
