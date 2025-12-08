@@ -221,7 +221,7 @@ fun MineBlock(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ){
                         Text(
-                            text = stringResource(R.string.top_message, custoProximoUpgrade),
+                            text = stringResource(R.string.cost, custoProximoUpgrade),
                             color = Color.White,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
