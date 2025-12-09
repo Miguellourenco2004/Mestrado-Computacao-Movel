@@ -1,16 +1,11 @@
 package com.example.minequest
 
 import android.Manifest
-import android.R.attr.onClick
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Looper
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,7 +19,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,8 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,19 +36,14 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
-import androidx.palette.graphics.Palette
 import com.example.minequest.ui.theme.MineQuestFont
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.*
-import com.google.android.libraries.places.api.net.*
 import com.google.maps.android.compose.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
-import kotlin.math.sqrt
-
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -64,224 +51,15 @@ fun MapScreen(
     navController: NavController,
     viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
+    // =========================================================================
+    // --- 1. SETUP DE VARIÁVEIS E ESTADOS ---
+    // =========================================================================
 
-
-
-
-
-
-    val miningResult by viewModel.miningResult.collectAsState()
     val context = LocalContext.current
-    val miningError by viewModel.miningError.collectAsState()
-    var showMiningShakeDialog by remember { mutableStateOf(false) }
-    val nearbyMarker by viewModel.nearbyMarker.collectAsState()
-
-    // Estados para a cor
-    var capturedColor by remember { mutableStateOf<Color?>(null) }
-    var capturedColorName by remember { mutableStateOf("") }
-    var showColorDialog by remember { mutableStateOf(false) }
-    var showErrorDialog by remember { mutableStateOf(false) }
-    // ... (código existente de loadMarkers, etc.) ...
-
-    // --- CÂMARA COM PALETTE ---
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap: Bitmap? ->
-        if (bitmap != null) {
-            androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
-                // Tenta pegar a cor dominante, ou a vibrante se falhar
-                val swatch = palette?.dominantSwatch ?: palette?.vibrantSwatch
-
-                if (swatch != null) {
-                    val colorObj = Color(swatch.rgb)
-
-                    capturedColor = colorObj
-                    // AQUI CHAMAMOS A FUNÇÃO DE AGRUPAMENTO
-                    capturedColorName = getClosestColorName(colorObj)
-
-
-                    viewModel.mineBlockFromColor(capturedColorName)
-
-                    showColorDialog = true
-                } else {
-                    Toast.makeText(context, "Não foi possível detetar cor", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
-
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            cameraLauncher.launch()
-        } else {
-            Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    // ...
-
-
-
-    LaunchedEffect(miningError) {
-        if (miningError != null) {
-            showErrorDialog = true
-        }
-    }
-
-    if (showErrorDialog && miningError != null) {
-        AlertDialog(
-            onDismissRequest = {
-                showErrorDialog = false
-                viewModel.clearMiningError()
-            },
-            title = {
-                Text(
-                    text = stringResource(id = R.string.wait),
-                    fontFamily = MineQuestFont,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    color = Color.Red
-                )
-            },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = stringResource(id = R.string.time),
-                        tint = Color.Red,
-                        modifier = Modifier.size(48.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = miningError!!,
-                        fontFamily = MineQuestFont,
-                        fontSize = 18.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showErrorDialog = false
-                        viewModel.clearMiningError()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(stringResource(id = R.string.got_it), fontFamily = MineQuestFont, color = Color.White)
-                }
-            },
-            containerColor = Color.White,
-            shape = RoundedCornerShape(16.dp)
-        )
-    }
-    // --- DIÁLOGO  ---
-    if (miningResult != null) {
-
-        val result = miningResult!!
-
-        AlertDialog(
-            onDismissRequest = { viewModel.clearMiningResult() },
-            modifier = Modifier.border(width = 4.dp, color = Color(0xFF513220), shape = RectangleShape),
-            shape = RectangleShape,
-            title = {
-
-                Text(
-                    text = stringResource(id = R.string.block_found),
-                    fontFamily = MineQuestFont,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    color = Color(0xFF513220),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
-            },
-            text = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-
-                    Image(
-                        painter = painterResource(id = result.imageRes),
-                        contentDescription = result.blockName,
-                        modifier = Modifier
-                            .size(120.dp)
-                            .padding(8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Mostra detalhe (opcional, pode ser útil para debug)
-                    Text(
-                        text = "${result.quantity}x ${result.blockName}",
-                        fontFamily = MineQuestFont,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "+${result.xpEarned} XP",
-                        fontFamily = MineQuestFont,
-                        fontSize = 18.sp,
-                        color = Color(0xFFFFA500)
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = { viewModel.clearMiningResult() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)),
-                    modifier = Modifier.fillMaxWidth(),
-                            shape = RectangleShape,
-                ) {
-                    Text("Collect", fontFamily = MineQuestFont, color = Color.White)
-                }
-            },
-            containerColor = Color.White,
-
-        )
-    }
-
-
-    // Foto do utilizador guardada na BD
-    var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
-
-    // Carregar foto do utilizador do Firebase
-    LaunchedEffect(Unit) {
-        val auth = FirebaseAuth.getInstance()
-        val db = FirebaseDatabase.getInstance().getReference("users")
-
-        auth.currentUser?.let { user ->
-            db.child(user.uid).get()
-                .addOnSuccessListener { snap ->
-                    profileImageName = snap.child("profileImage").getValue(String::class.java)
-                        ?: "minecraft_creeper_face"
-                }
-        }
-    }
-
-    // Lista de ícones possíveis para markers
-    val markerIcons = listOf(
-        R.drawable.arvore, R.drawable.calhao, R.drawable.casas,
-        R.drawable.casass, R.drawable.castelo, R.drawable.coiso, R.drawable.fogo
-    )
-
-    // Cache para garantir imagem fixa em cada marker
-    val markerIconCache = remember { mutableStateMapOf<String, Int>() }
-
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
     val placesClient = remember { Places.createClient(context) }
 
-    // Estados vindos do ViewModel
+    // Estados observados do ViewModel
     val currentLocation by viewModel.currentLocation.collectAsState()
     val destination by viewModel.destination.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
@@ -289,171 +67,134 @@ fun MapScreen(
     val navigationEnabled by viewModel.navigationEnabled.collectAsState()
     val distanceText by viewModel.distanceText.collectAsState()
     val durationText by viewModel.durationText.collectAsState()
+    val miningResult by viewModel.miningResult.collectAsState()
+    val miningError by viewModel.miningError.collectAsState()
+    val nearbyMarker by viewModel.nearbyMarker.collectAsState()
+    val players by viewModel.players.collectAsState()
 
+    // Listas de Markers (JSON)
     val lisboaMarkers by viewModel.lisboaMarkers.collectAsState()
     val setubalMarkers by viewModel.setubalMarkers.collectAsState()
     val portugalMarkers by viewModel.portugalMarkers.collectAsState()
 
+    // Estados locais da UI
     var query by remember { mutableStateOf("") }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
 
-    // Carregar markers + localização inicial
-    LaunchedEffect(Unit) {
-        viewModel.loadMarkers(context)
-        viewModel.loadPlayers()
-        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED
-        ) {
-            fused.lastLocation.addOnSuccessListener {
-                if (it != null) {
-                    viewModel.setCurrentLocation(LatLng(it.latitude, it.longitude))
+    // Câmara do Mapa
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(38.736946, -9.142685), 12f)
+    }
+
+    // =========================================================================
+    // --- 2. PERMISSÕES E LAUNCHERS ---
+    // =========================================================================
+
+    // Launcher da Câmara (Mineração por Cor)
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        if (bitmap != null) {
+            androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
+                val swatch = palette?.dominantSwatch ?: palette?.vibrantSwatch
+                if (swatch != null) {
+                    // Chama o ViewModel para processar a cor
+                    viewModel.processCapturedColor(swatch.rgb)
+                } else {
+                    Toast.makeText(context, "Não foi possível detetar cor", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    // Seleciona imagem aleatória mas fixa para cada marker
-    fun getIconForMarker(id: String): Int =
-        markerIconCache.getOrPut(id) { markerIcons.random() }
-
-
-
-    // ---------------------------
-    // CÂMARA DO MAPA
-    // ---------------------------
-
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(38.736946, -9.142685), 12f)
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) cameraLauncher.launch()
+        else Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
     }
 
-    LaunchedEffect(currentLocation) {
-        currentLocation?.let {
-            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 16f))
+    // =========================================================================
+    // --- 3. EFEITOS DE COMPOSIÇÃO (LaunchedEffects) ---
+    // =========================================================================
+
+    // Carregar dados iniciais e localização
+    LaunchedEffect(Unit) {
+        viewModel.loadMarkers(context)
+        viewModel.loadPlayers()
+
+        // Foto do user
+        val auth = FirebaseAuth.getInstance()
+        val db = FirebaseDatabase.getInstance().getReference("users")
+        auth.currentUser?.let { user ->
+            db.child(user.uid).get().addOnSuccessListener { snap ->
+                profileImageName = snap.child("profileImage").getValue(String::class.java) ?: "minecraft_creeper_face"
+            }
         }
 
-    }
-
-
-
-    // ---------------------------
-    // BITMAPS PARA MARCADORES
-    // ---------------------------
-
-    val markerBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
-    val userBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
-
-    // Marker do mapa (grande)
-    fun bitmapDescriptorMarker(context: Context, resId: Int): BitmapDescriptor {
-        val drawable = ContextCompat.getDrawable(context, resId)
-            ?: return BitmapDescriptorFactory.defaultMarker()
-
-        val px = (96 * context.resources.displayMetrics.density).toInt()
-
-        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-        drawable.setBounds(0, 0, px, px)
-        drawable.draw(Canvas(bmp))
-        return BitmapDescriptorFactory.fromBitmap(bmp)
-    }
-
-    // Foto do utilizador (pequena)
-    fun bitmapDescriptorUser(context: Context, resId: Int): BitmapDescriptor {
-        val drawable = ContextCompat.getDrawable(context, resId)
-            ?: return BitmapDescriptorFactory.defaultMarker()
-
-        val px = (48 * context.resources.displayMetrics.density).toInt()
-
-        val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
-        drawable.setBounds(0, 0, px, px)
-        drawable.draw(Canvas(bmp))
-        return BitmapDescriptorFactory.fromBitmap(bmp)
-    }
-
-    fun getMarkerBitmap(resId: Int) =
-        markerBitmapCache.getOrPut(resId) { bitmapDescriptorMarker(context, resId) }
-
-    fun getUserBitmap(resId: Int) =
-        userBitmapCache.getOrPut(resId) { bitmapDescriptorUser(context, resId) }
-
-
-    // Imagem correta do utilizador
-    fun getUserImage(name: String): Int {
-        return when (name) {
-            "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
-            "4efed46e89c72955ddc7c77ad08b2ee" -> R.drawable._4efed46e89c72955ddc7c77ad08b2ee
-            "578bfd439ef6ee41e103ae82b561986" -> R.drawable._578bfd439ef6ee41e103ae82b561986
-            "faf3182a063a0f2a825cb39d959bae7" -> R.drawable._faf3182a063a0f2a825cb39d959bae7
-            "a9a4ec03fa9afc407028ca40c20ed774" -> R.drawable.a9a4ec03fa9afc407028ca40c20ed774
-            "big_villager_face" -> R.drawable.big_villager_face
-            "images" -> R.drawable.images
-            else -> R.drawable.minecraft_creeper_face
+        // Posição GPS inicial
+        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            fused.lastLocation.addOnSuccessListener {
+                if (it != null) viewModel.setCurrentLocation(LatLng(it.latitude, it.longitude))
+            }
         }
     }
 
-    val userIconRes = getUserImage(profileImageName)
-
-
-
-    // ---------------------------
-    // ATUALIZAÇÃO DE LOCALIZAÇÃO
-    // ---------------------------
-
+    // Navegação em tempo real
     LaunchedEffect(navigationEnabled) {
-
         val callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val loc = result.lastLocation ?: return
                 viewModel.setCurrentLocation(LatLng(loc.latitude, loc.longitude))
             }
         }
-
         fused.requestLocationUpdates(
             LocationRequest.Builder(2000).setPriority(Priority.PRIORITY_HIGH_ACCURACY).build(),
-            callback,
-            Looper.getMainLooper()
+            callback, Looper.getMainLooper()
         )
     }
 
+    // Controlar erros
+    LaunchedEffect(miningError) { if (miningError != null) showErrorDialog = true }
 
-
-
-    @Composable
-    fun AddMarkerComposable(
-        m: MapMarker,
-        getMarkerBitmap: (Int) -> BitmapDescriptor,
-        getIconForMarker: (String) -> Int,
-        cameraPositionState: CameraPositionState,
-        navigationEnabled: Boolean,
-        currentLocation: LatLng?,
-        viewModel: MapViewModel
-    ) {
-        val pos = LatLng(m.lat, m.lng)
-
-        Marker(
-            state = MarkerState(pos),
-            title = null,
-            icon = getMarkerBitmap(getIconForMarker(m.id)),
-            onClick = {
-                viewModel.setDestination(pos)
-
-                cameraPositionState.move(
-                    CameraUpdateFactory.newLatLngZoom(pos, 17f)
-                )
-
-                currentLocation?.let { origem ->
-                    if (navigationEnabled) viewModel.Rota(origem, pos)
-                }
-
-                true // Impede infoWindows e o pin vermelho
-            }
-        )
+    // Animar câmara quando o destino ou local muda
+    LaunchedEffect(destination) {
+        destination?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 17f)) }
+    }
+    LaunchedEffect(currentLocation) {
+        // Opcional: só foca no user se não houver destino ativo, ou apenas na 1ª vez
+        if (destination == null && currentLocation != null) {
+            // cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLocation!!, 16f))
+        }
     }
 
+    // =========================================================================
+    // --- 4. RECURSOS UI (Bitmaps) ---
+    // =========================================================================
 
-    // ---------------------------
-    // MAPA
-    // ---------------------------
+    val markerBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
+    val userBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
+
+    fun getMarkerBitmap(resId: Int) = markerBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 96) }
+    fun getUserBitmap(resId: Int) = userBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 48) }
+    val userIconRes = getUserImageResource(profileImageName)
+
+    // =========================================================================
+    // --- 5. INTERFACE VISUAL (UI) ---
+    // =========================================================================
+
+    // --- Dialogs ---
+    if (showErrorDialog && miningError != null) {
+        MiningErrorDialog(miningError!!) { showErrorDialog = false; viewModel.clearMiningError() }
+    }
+    if (miningResult != null) {
+        MiningSuccessDialog(miningResult!!) { viewModel.clearMiningResult() }
+    }
 
     Box(Modifier.fillMaxSize()) {
 
+        // --- 5.1 MAPA ---
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -462,449 +203,232 @@ fun MapScreen(
                 mapStyleOptions = MapStyleOptions.loadRawResourceStyle(context, R.raw.minecraft_style)
             )
         ) {
-
-
-            // Mostrar posição do utilizador
+            // Player Local
             currentLocation?.let { pos ->
                 Marker(
-                    state = MarkerState(pos),
-                    title = "Eu",
-                    icon = getUserBitmap(userIconRes),
-                    anchor = Offset(0.5f, 0.5f)
+                    state = MarkerState(pos), title = "Eu",
+                    icon = getUserBitmap(userIconRes), anchor = Offset(0.5f, 0.5f)
                 )
             }
 
-
-            val players by viewModel.players.collectAsState()
-
+            // Outros Players
             players.forEach { user ->
                 val playerPos = LatLng(user.lat!!, user.lng!!)
                 Marker(
-                    state = MarkerState(LatLng(user.lat!!, user.lng!!)),
-                    title = user.username ?: "",
-                    icon = getUserBitmap(getUserImage(user.profileImage ?: "")),
+                    state = MarkerState(playerPos), title = user.username ?: "",
+                    icon = getUserBitmap(getUserImageResource(user.profileImage ?: "")),
                     anchor = Offset(0.5f, 0.5f),
                     onClick = {
                         viewModel.setDestination(playerPos)
-
-
-                        currentLocation?.let { origem ->
-                            if (navigationEnabled) viewModel.Rota(origem, playerPos)
-                        }
+                        currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, playerPos) }
                         true
                     }
-
-
                 )
-
             }
 
-            // Destino
+            // Marcador de Destino (Invisível/Lógico)
             destination?.let { dest ->
                 Marker(
-                    state = MarkerState(dest),
-                    title = null,
-
-
-                    icon = BitmapDescriptorFactory.fromBitmap(
-                        Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-                    ),
-
+                    state = MarkerState(dest), title = null,
+                    icon = BitmapDescriptorFactory.fromBitmap(Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)),
                     onClick = { true }
                 )
             }
 
-
-            // Linha da rota
+            // Rota (Linha Vermelha)
             if (routePoints.isNotEmpty()) {
-                Polyline(
-                    points = routePoints,
-                    width = 16f,
-                    color = Color.Red
-                )
+                Polyline(points = routePoints, width = 16f, color = Color.Red)
             }
 
-            // Markers do JSON
-            lisboaMarkers.forEach { m ->
-                AddMarkerComposable(
-                    m = m,
-                    getMarkerBitmap = { getMarkerBitmap(it) },
-                    getIconForMarker = { getIconForMarker(it) },
-                    cameraPositionState = cameraPositionState,
-                    navigationEnabled = navigationEnabled,
-                    currentLocation = currentLocation,
-                    viewModel = viewModel
-                )
-                Circle(
-                    center = LatLng(m.lat, m.lng),
-                    radius = 200.0,
-                    strokeColor = Color(0xFF513220),
-                    fillColor = Color(0x2252A435), // Verde transparente
-                    strokeWidth = 2f
-                )
+            // Marcadores do Mapa (JSON)
+            val allMapMarkers = lisboaMarkers + setubalMarkers + portugalMarkers
+            allMapMarkers.forEach { m ->
+                // Pede ao ViewModel qual ícone usar (garante persistência)
+                val iconId = viewModel.getIconForMarker(m.id)
 
+                // Desenha Círculos para área de Lisboa (exemplo)
+                if (m in lisboaMarkers) {
+                    Circle(center = LatLng(m.lat, m.lng), radius = 200.0, strokeColor = Color(0xFF513220), fillColor = Color(0x2252A435), strokeWidth = 2f)
+                }
 
-
+                CustomMapMarker(m, getMarkerBitmap(iconId)) { pos ->
+                    viewModel.setDestination(pos)
+                    cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(pos, 17f))
+                    currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, pos) }
+                }
             }
-
-            setubalMarkers.forEach { m ->
-                AddMarkerComposable(
-                    m = m,
-                    getMarkerBitmap = { getMarkerBitmap(it) },
-                    getIconForMarker = { getIconForMarker(it) },
-                    cameraPositionState = cameraPositionState,
-                    navigationEnabled = navigationEnabled,
-                    currentLocation = currentLocation,
-                    viewModel = viewModel
-                )
-            }
-
-            portugalMarkers.forEach { m ->
-                AddMarkerComposable(
-                    m = m,
-                    getMarkerBitmap = { getMarkerBitmap(it) },
-                    getIconForMarker = { getIconForMarker(it) },
-                    cameraPositionState = cameraPositionState,
-                    navigationEnabled = navigationEnabled,
-                    currentLocation = currentLocation,
-                    viewModel = viewModel
-                )
-            }
-
         }
 
+        // --- 5.2 BARRA DE PESQUISA E OVERLAYS ---
 
-
-        // ---------------------------
-        // BARRA DE PESQUISA
-        // ---------------------------
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(20.dp)
-                .fillMaxWidth(0.9f)
-        ) {
+        Column(modifier = Modifier.align(Alignment.TopCenter).padding(20.dp).fillMaxWidth(0.9f)) {
             OutlinedTextField(
                 value = query,
                 onValueChange = {
                     query = it
-                    sugestoes(it, placesClient, viewModel)
+                    viewModel.fetchSuggestions(it, placesClient)
                 },
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    fontFamily = MineQuestFont,
-                    fontSize = 16.sp,
-                    color = Color.Black
-                ),
-
-                placeholder = { Text(stringResource(id = R.string.search_here),
-                    fontFamily = MineQuestFont,
-                    fontSize = 16.sp) },
-
+                textStyle = androidx.compose.ui.text.TextStyle(fontFamily = MineQuestFont, fontSize = 16.sp, color = Color.Black),
+                placeholder = { Text(stringResource(id = R.string.search_here), fontFamily = MineQuestFont, fontSize = 16.sp) },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedBorderColor = Color.Black,
-                    unfocusedBorderColor = Color(0xFF513220),
-                    cursorColor = Color.Black
+                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                    focusedBorderColor = Color.Black, unfocusedBorderColor = Color(0xFF513220), cursorColor = Color.Black
                 ),
                 shape = RectangleShape,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White, RectangleShape)
-                    .border(2.dp, Color(0xFF513220), RectangleShape),
-
-
+                modifier = Modifier.fillMaxWidth().background(Color.White, RectangleShape).border(2.dp, Color(0xFF513220), RectangleShape),
                 singleLine = true
             )
 
+            // Lista de Sugestões
             predictions.forEach { (id, desc) ->
                 TextButton(
                     onClick = {
-                        irParaLugar(
-                            placeId = id,
-                            placesClient = placesClient,
-                            cameraPositionState = cameraPositionState,
-                            viewModel = viewModel,
-                            querySetter = { query = it }
-                        )
+                        viewModel.selectPlace(id, placesClient) { name -> query = name }
                     },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(desc, color = Color.Black)
-                }
+                    modifier = Modifier.fillMaxWidth().background(Color.White)
+                ) { Text(desc, color = Color.Black) }
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(bottom = 1.dp, end = 32.dp)
-        ) {
+        // Botão Câmara
+        Box(modifier = Modifier.align(Alignment.BottomStart).padding(bottom = 1.dp, end = 32.dp)) {
             Image(
-                painter = painterResource(id = R.drawable.icone_fotos), // A tua imagem
+                painter = painterResource(id = R.drawable.icone_fotos),
                 contentDescription = stringResource(id = R.string.open_camera),
-                modifier = Modifier
-                    .size(120.dp)
-                    .clickable {
-
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                            cameraLauncher.launch()
-                        } else {
-                            permissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
-                    }
+                modifier = Modifier.size(120.dp).clickable {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) cameraLauncher.launch()
+                    else permissionLauncher.launch(Manifest.permission.CAMERA)
+                }
             )
         }
 
-        // ---------------------------
-        // PAINEL DE DISTÂNCIA/TEMPO
-        // ---------------------------
-
+        // Painel de Navegação
         if (navigationEnabled && distanceText != null && durationText != null) {
             Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 90.dp)
-                    .fillMaxWidth(0.6f)
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp).fillMaxWidth(0.6f)
                     .border(width = 4.dp, color = Color(0xFF513220), shape = RectangleShape),
                 shape = RoundedCornerShape(2.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(stringResource(id = R.string.distance)+"$distanceText",  fontFamily = MineQuestFont,
-                        fontSize = 16.sp)
-                    Text(stringResource(id = R.string.estimated_time)+"$durationText",  fontFamily = MineQuestFont,
-                        fontSize = 16.sp)
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(stringResource(id = R.string.distance) + "$distanceText", fontFamily = MineQuestFont, fontSize = 16.sp)
+                    Text(stringResource(id = R.string.estimated_time) + "$durationText", fontFamily = MineQuestFont, fontSize = 16.sp)
                 }
             }
         }
 
-
-
-        // ---------------------------
-        // BOTÃO "IR PARA DESTINO"
-        // ---------------------------
-
+        // Botão "Ir"
         if (destination != null && !navigationEnabled) {
             Button(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-
-                    .padding(16.dp),
-
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF513220),
-                    contentColor = Color.White
-                ),
-
-                onClick = {
-                    viewModel.startNavigation()
-                    currentLocation?.let { origem ->
-                        destination?.let { dest ->
-                            viewModel.Rota(origem, dest)
-                        }
-                    }
-                }
-            ) {
-                Text(stringResource(id = R.string.go_there),
-                    fontFamily = MineQuestFont,
-                    fontSize = 16.sp)
-            }
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                shape = RectangleShape, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220), contentColor = Color.White),
+                onClick = { viewModel.startNavigation(); currentLocation?.let { origem -> destination?.let { dest -> viewModel.Rota(origem, dest) } } }
+            ) { Text(stringResource(id = R.string.go_there), fontFamily = MineQuestFont, fontSize = 16.sp) }
         }
 
-
-
-        // ---------------------------
-        // BOTÃO "CANCELAR VIAGEM"
-        // ---------------------------
-
+        // Botão "Cancelar"
         if (navigationEnabled) {
             Button(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red,
-                    contentColor = Color.White
-                ),
-
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
+                shape = RectangleShape, colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White),
                 onClick = { viewModel.stopNavigation() }
-            ) {
-                Text(stringResource(id = R.string.cancel_trip),
-                    fontFamily = MineQuestFont,
-                    fontSize = 16.sp)
-            }
+            ) { Text(stringResource(id = R.string.cancel_trip), fontFamily = MineQuestFont, fontSize = 16.sp) }
         }
 
-        if (nearbyMarker != null){
+        // Botão de Mineração de Estrutura
+        if (nearbyMarker != null) {
             Button(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp)
-                   // .height(54.dp)
-                    .border(
-                        width = 3.dp,
-                        color = Color(0xFF513220),
-                        shape = RectangleShape
-                    ),
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
-                shape = RectangleShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White, // Fundo Branco
-                    contentColor = Color(0xFF513220) // Cor do texto (Castanho para combinar)
-                ),
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).border(width = 3.dp, color = Color(0xFF513220), shape = RectangleShape),
+                contentPadding = PaddingValues(8.dp), shape = RectangleShape,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF513220)),
                 onClick = {
-                    val iconRes = getIconForMarker(nearbyMarker!!.id)
+                    val iconRes = viewModel.getIconForMarker(nearbyMarker!!.id)
                     viewModel.mineBlockFromStructure(iconRes)
                 }
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    // MUDANÇA IMPORTANTE: Usar 'Image' em vez de 'Icon' para manter as cores originais
-                    Image(
-                        painter = painterResource(id = R.drawable.diamond_pickaxe), //
-                        contentDescription = "Mine",
-                        modifier = Modifier.size(24.dp)
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = "MINERAR", // Texto sugerido
-                        fontFamily = MineQuestFont,
-                        fontSize = 10.sp,
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold
-                    )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Image(painter = painterResource(id = R.drawable.diamond_pickaxe), contentDescription = "Mine", modifier = Modifier.size(24.dp))
+                    Text("MINERAR", fontFamily = MineQuestFont, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
-
-
-
     }
 }
 
+// =========================================================================
+// --- 6. HELPERS DE UI (Composable Functions) ---
+// =========================================================================
 
-
-// ---------------------------
-// FUNÇÕES AUXILIARES
-// ---------------------------
-
-fun sugestoes(
-    input: String,
-    placesClient: PlacesClient,
-    viewModel: MapViewModel
-) {
-    if (input.length < 3) {
-        viewModel.setPredictions(emptyList())
-        return
-    }
-
-    val token = AutocompleteSessionToken.newInstance()
-    val req = FindAutocompletePredictionsRequest.builder()
-        .setQuery(input)
-        .setSessionToken(token)
-        .build()
-
-    placesClient.findAutocompletePredictions(req)
-        .addOnSuccessListener { resp ->
-            viewModel.setPredictions(
-                resp.autocompletePredictions.map {
-                    it.placeId to it.getFullText(null).toString()
-                }
-            )
-        }
-}
-
-fun irParaLugar(
-    placeId: String,
-    placesClient: PlacesClient,
-    cameraPositionState: CameraPositionState,
-    viewModel: MapViewModel,
-    querySetter: (String) -> Unit
-) {
-    val req = FetchPlaceRequest.newInstance(
-        placeId,
-        listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+@Composable
+fun CustomMapMarker(m: MapMarker, bitmapDescriptor: BitmapDescriptor, onClick: (LatLng) -> Unit) {
+    Marker(
+        state = MarkerState(LatLng(m.lat, m.lng)),
+        icon = bitmapDescriptor,
+        onClick = { onClick(LatLng(m.lat, m.lng)); true }
     )
-
-    placesClient.fetchPlace(req)
-        .addOnSuccessListener { res ->
-            val latLng = res.place.latLng ?: return@addOnSuccessListener
-
-            querySetter(res.place.name ?: "")
-            viewModel.setPredictions(emptyList())
-            viewModel.setDestination(latLng)
-
-            cameraPositionState.move(
-                CameraUpdateFactory.newLatLngZoom(latLng, 17f)
-            )
-        }
 }
 
-
-// --- FUNÇÃO PARA DESCOBRIR A CATEGORIA DA COR ---
-
-fun getClosestColorName(color: Color): String {
-    // 1. Converter a cor do Jetpack Compose (0.0-1.0) para RGB (0-255)
-    val r = (color.red * 255).toInt()
-    val g = (color.green * 255).toInt()
-    val b = (color.blue * 255).toInt()
-
-    // 2. Converter para HSV (Matiz, Saturação, Brilho)
-    val hsv = FloatArray(3)
-    android.graphics.Color.RGBToHSV(r, g, b, hsv)
-
-    val hue = hsv[0]        // Cor (0 a 360 graus)
-    val saturation = hsv[1] // Intensidade (0.0 a 1.0)
-    val value = hsv[2]      // Brilho/Luminosidade (0.0 a 1.0)
-
-    // --- LOGICA DE CORES NEUTRAS (Preto, Branco, Cinzento) ---
-    // Se o brilho for muito baixo, é Preto
-    if (value < 0.20) return "Preto"
-
-    // Se a saturação for muito baixa, é Cinzento ou Branco (dependendo do brilho)
-    if (saturation < 0.15) {
-        return if (value > 0.85) "Branco" else "Cinzento"
-    }
-
-    // --- REGRA ESPECIAL PARA CASTANHO ---
-    // O Castanho é basicamente um Laranja ou Amarelo escuro.
-    // Se a cor for Laranja/Amarelo (15º a 60º) mas o brilho for menor que 70%, é Castanho.
-    if (hue in 15f..60f && value < 0.70) {
-        return "Castanho"
-    }
-    // Às vezes o castanho avermelhado aparece abaixo dos 15º
-    if (hue < 15f && value < 0.50 && saturation > 0.4) {
-        return "Castanho"
-    }
-
-    // --- CORES PELO CÍRCULO CROMÁTICO (HUE) ---
-    return when {
-        hue < 15f  -> "Vermelho"
-        hue < 45f  -> "Laranja"
-        hue < 75f  -> "Amarelo"
-        hue < 165f -> "Verde" // Apanha lima, verde escuro, ciano-esverdeado
-        hue < 260f -> "Azul"  // Apanha ciano, azul claro, azul escuro
-        hue < 330f -> "Roxo"  // Apanha magenta, violeta
-        else       -> "Vermelho" // Volta ao início do círculo (330-360)
-    }
+@Composable
+fun MiningErrorDialog(errorText: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(id = R.string.wait), fontFamily = MineQuestFont, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color.Red) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(Icons.Default.AccessTime, contentDescription = null, tint = Color.Red, modifier = Modifier.size(48.dp))
+                Spacer(Modifier.height(16.dp))
+                Text(errorText, fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center)
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.Red), shape = RoundedCornerShape(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(id = R.string.got_it), fontFamily = MineQuestFont, color = Color.White)
+            }
+        },
+        containerColor = Color.White, shape = RoundedCornerShape(16.dp)
+    )
 }
 
+@Composable
+fun MiningSuccessDialog(result: MiningResult, onCollect: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onCollect,
+        modifier = Modifier.border(4.dp, Color(0xFF513220), RectangleShape), shape = RectangleShape,
+        title = { Text(stringResource(id = R.string.block_found), fontFamily = MineQuestFont, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Color(0xFF513220), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Image(painterResource(result.imageRes), null, Modifier.size(120.dp).padding(8.dp))
+                Text("${result.quantity}x ${result.blockName}", fontFamily = MineQuestFont, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("+${result.xpEarned} XP", fontFamily = MineQuestFont, fontSize = 18.sp, color = Color(0xFFFFA500))
+            }
+        },
+        confirmButton = {
+            Button(onClick = onCollect, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF52A435)), modifier = Modifier.fillMaxWidth(), shape = RectangleShape) {
+                Text("Collect", fontFamily = MineQuestFont, color = Color.White)
+            }
+        },
+        containerColor = Color.White
+    )
+}
 
+// Criação de Bitmaps para o Google Maps
+fun createBitmapDescriptor(context: Context, resId: Int, sizeDp: Int): BitmapDescriptor {
+    val drawable = ContextCompat.getDrawable(context, resId) ?: return BitmapDescriptorFactory.defaultMarker()
+    val px = (sizeDp * context.resources.displayMetrics.density).toInt()
+    val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+    drawable.setBounds(0, 0, px, px)
+    drawable.draw(Canvas(bmp))
+    return BitmapDescriptorFactory.fromBitmap(bmp)
+}
 
-
-
-
-
-
-
+fun getUserImageResource(name: String): Int {
+    return when (name) {
+        "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75
+        "4efed46e89c72955ddc7c77ad08b2ee" -> R.drawable._4efed46e89c72955ddc7c77ad08b2ee
+        "578bfd439ef6ee41e103ae82b561986" -> R.drawable._578bfd439ef6ee41e103ae82b561986
+        "faf3182a063a0f2a825cb39d959bae7" -> R.drawable._faf3182a063a0f2a825cb39d959bae7
+        "a9a4ec03fa9afc407028ca40c20ed774" -> R.drawable.a9a4ec03fa9afc407028ca40c20ed774
+        "big_villager_face" -> R.drawable.big_villager_face
+        "images" -> R.drawable.images
+        else -> R.drawable.minecraft_creeper_face
+    }
+}

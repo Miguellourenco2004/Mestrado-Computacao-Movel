@@ -5,6 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.minequest.model.User
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.api.net.FetchPlaceRequest
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
+import com.google.android.libraries.places.api.net.PlacesClient
+
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -21,7 +27,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import kotlin.random.Random
+import android.graphics.Color as AndroidColor
 
+// Classe de dados para resultados da mineração
 data class MiningResult(
     val blockId: String,
     val blockName: String,
@@ -32,8 +40,11 @@ data class MiningResult(
 
 class MapViewModel : ViewModel() {
 
-    // --- ESTADOS (StateFlows) ---
+    // =========================================================================
+    // --- 1. VARIÁVEIS DE ESTADO (StateFlows) ---
+    // =========================================================================
 
+    // --- Marcadores e Jogadores ---
     private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
     val lisboaMarkers = _lisboaMarkers.asStateFlow()
 
@@ -43,17 +54,13 @@ class MapViewModel : ViewModel() {
     private val _portugalMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
     val portugalMarkers = _portugalMarkers.asStateFlow()
 
-    private val _currentLocation = MutableStateFlow<LatLng?>(null)
-    val currentLocation = _currentLocation.asStateFlow()
-
     private val _players = MutableStateFlow<List<User>>(emptyList())
     val players = _players.asStateFlow()
 
-    // Marcador próximo (para ativar o botão de minerar estrutura)
-    private val _nearbyMarker = MutableStateFlow<MapMarker?>(null)
-    val nearbyMarker = _nearbyMarker.asStateFlow()
+    // --- Navegação e Localização ---
+    private val _currentLocation = MutableStateFlow<LatLng?>(null)
+    val currentLocation = _currentLocation.asStateFlow()
 
-    // Destino e Navegação
     private val _destination = MutableStateFlow<LatLng?>(null)
     val destination = _destination.asStateFlow()
 
@@ -72,20 +79,32 @@ class MapViewModel : ViewModel() {
     private val _navigationEnabled = MutableStateFlow(false)
     val navigationEnabled = _navigationEnabled.asStateFlow()
 
-    // Resultados de Mineração e Erros
+    // --- Sistema de Mineração (Jogo) ---
+    private val _nearbyMarker = MutableStateFlow<MapMarker?>(null)
+    val nearbyMarker = _nearbyMarker.asStateFlow()
+
     private val _miningResult = MutableStateFlow<MiningResult?>(null)
     val miningResult = _miningResult.asStateFlow()
 
     private val _miningError = MutableStateFlow<String?>(null)
     val miningError = _miningError.asStateFlow()
 
-    // Dados locais
+    // --- Variáveis Internas (Lógica) ---
     private var lastSavedLocation: LatLng? = null
     private var currentUserData: User? = null
     private val INTERACTION_RADIUS_METERS = 200.0
 
+    // Cache para ícones persistentes (Castelo, Arvore, etc.)
+    private val markerIconCache = mutableMapOf<String, Int>()
+    private val availableIcons = listOf(
+        R.drawable.arvore, R.drawable.calhao, R.drawable.casas,
+        R.drawable.casass, R.drawable.castelo, R.drawable.coiso, R.drawable.fogo
+    )
+
+    // =========================================================================
+    // --- 2. INICIALIZAÇÃO ---
+    // =========================================================================
     init {
-        // Carregar dados do user atual (para saber nível da picareta, etc.)
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
             FirebaseDatabase.getInstance().getReference("users").child(uid)
@@ -98,18 +117,77 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // --- LOCALIZAÇÃO E PROXIMIDADE ---
+    // =========================================================================
+    // --- 3. GESTÃO DE MARCADORES E ÍCONES ---
+    // =========================================================================
+
+    fun loadMarkers(context: Context) {
+        try {
+            val inputStream = context.resources.openRawResource(R.raw.markers)
+            val json = inputStream.bufferedReader().use { it.readText() }
+            val obj = JSONObject(json)
+
+            fun parseArray(key: String): List<MapMarker> {
+                if (!obj.has(key)) return emptyList()
+                val arr = obj.getJSONArray(key)
+                val list = mutableListOf<MapMarker>()
+                for (i in 0 until arr.length()) {
+                    val o = arr.getJSONObject(i)
+                    list.add(
+                        MapMarker(
+                            id = o.getString("id"),
+                            name = o.getString("name"),
+                            lat = o.getDouble("lat"),
+                            lng = o.getDouble("lng")
+                        )
+                    )
+                }
+                return list
+            }
+            _lisboaMarkers.value = parseArray("lisboa")
+            _setubalMarkers.value = parseArray("setubal")
+            _portugalMarkers.value = parseArray("portugal")
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    // Retorna um ícone fixo para um dado ID de marcador
+    fun getIconForMarker(markerId: String): Int {
+        return markerIconCache.getOrPut(markerId) {
+            availableIcons.random()
+        }
+    }
+
+    fun loadPlayers() {
+        val db = FirebaseDatabase.getInstance().getReference("users")
+        val myUid = FirebaseAuth.getInstance().currentUser?.uid
+
+        db.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = snapshot.children.mapNotNull { snap ->
+                    val user = snap.getValue(User::class.java) ?: return@mapNotNull null
+                    if (snap.key == myUid) return@mapNotNull null
+                    if (user.lat == null || user.lng == null) return@mapNotNull null
+                    user
+                }
+                _players.value = list
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    // =========================================================================
+    // --- 4. LOCALIZAÇÃO E GOOGLE PLACES API ---
+    // =========================================================================
 
     fun setCurrentLocation(latLng: LatLng) {
         _currentLocation.value = latLng
-
-        // Verificar se há algum marker perto sempre que nos movemos
         checkProximityToMarkers(latLng)
 
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val db = FirebaseDatabase.getInstance().getReference("users")
 
-        // Guardar localização na BD (com otimização de distância)
         if (lastSavedLocation == null) {
             lastSavedLocation = latLng
             saveLocationToFirebase(db, uid, latLng)
@@ -123,9 +201,41 @@ class MapViewModel : ViewModel() {
             results
         )
 
-        if (results[0] > 20) { // Só guarda se moveu mais de 20 metros
+        if (results[0] > 20) {
             lastSavedLocation = latLng
             saveLocationToFirebase(db, uid, latLng)
+        }
+    }
+
+    // Pesquisa de locais (Autocomplete)
+    fun fetchSuggestions(query: String, placesClient: PlacesClient) {
+        if (query.length < 3) {
+            _predictions.value = emptyList()
+            return
+        }
+        val token = AutocompleteSessionToken.newInstance()
+        val req = FindAutocompletePredictionsRequest.builder()
+            .setQuery(query)
+            .setSessionToken(token)
+            .build()
+
+        placesClient.findAutocompletePredictions(req).addOnSuccessListener { resp ->
+            _predictions.value = resp.autocompletePredictions.map {
+                it.placeId to it.getFullText(null).toString()
+            }
+        }.addOnFailureListener {
+            _predictions.value = emptyList()
+        }
+    }
+
+    // Seleção de local (Fetch Place)
+    fun selectPlace(placeId: String, placesClient: PlacesClient, onPlaceSelected: (String) -> Unit) {
+        val req = FetchPlaceRequest.newInstance(placeId, listOf(Place.Field.LAT_LNG, Place.Field.NAME))
+        placesClient.fetchPlace(req).addOnSuccessListener { res ->
+            val latLng = res.place.latLng ?: return@addOnSuccessListener
+            _predictions.value = emptyList()
+            setDestination(latLng)
+            onPlaceSelected(res.place.name ?: "")
         }
     }
 
@@ -156,71 +266,13 @@ class MapViewModel : ViewModel() {
         _nearbyMarker.value = closest
     }
 
-    // --- CARREGAMENTO DE DADOS ---
+    // =========================================================================
+    // --- 5. NAVEGAÇÃO (Directions API) ---
+    // =========================================================================
 
-    fun loadMarkers(context: Context) {
-        try {
-            val inputStream = context.resources.openRawResource(R.raw.markers)
-            val json = inputStream.bufferedReader().use { it.readText() }
-            val obj = JSONObject(json)
-
-            fun parseArray(key: String): List<MapMarker> {
-                if (!obj.has(key)) return emptyList()
-                val arr = obj.getJSONArray(key)
-                val list = mutableListOf<MapMarker>()
-                for (i in 0 until arr.length()) {
-                    val o = arr.getJSONObject(i)
-                    list.add(
-                        MapMarker(
-                            id = o.getString("id"),
-                            name = o.getString("name"),
-                            lat = o.getDouble("lat"),
-                            lng = o.getDouble("lng")
-                        )
-                    )
-                }
-                return list
-            }
-
-            _lisboaMarkers.value = parseArray("lisboa")
-            _setubalMarkers.value = parseArray("setubal")
-            _portugalMarkers.value = parseArray("portugal")
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun loadPlayers() {
-        val db = FirebaseDatabase.getInstance().getReference("users")
-        val myUid = FirebaseAuth.getInstance().currentUser?.uid
-
-        db.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                val list = snapshot.children.mapNotNull { snap ->
-                    val user = snap.getValue(User::class.java) ?: return@mapNotNull null
-                    if (snap.key == myUid) return@mapNotNull null
-                    if (user.lat == null || user.lng == null) return@mapNotNull null
-                    user
-                }
-                _players.value = list
-            }
-            override fun onCancelled(error: DatabaseError) {}
-        })
-    }
-
-    // --- NAVEGAÇÃO ---
-
-    fun setDestination(latLng: LatLng?) {
-        _destination.value = latLng
-    }
-
-    fun setPredictions(list: List<Pair<String, String>>) {
-        _predictions.value = list
-    }
-
-    fun startNavigation() {
-        _navigationEnabled.value = true
-    }
+    fun setDestination(latLng: LatLng?) { _destination.value = latLng }
+    fun setPredictions(list: List<Pair<String, String>>) { _predictions.value = list }
+    fun startNavigation() { _navigationEnabled.value = true }
 
     fun stopNavigation() {
         _navigationEnabled.value = false
@@ -233,6 +285,7 @@ class MapViewModel : ViewModel() {
     fun Rota(origem: LatLng, destino: LatLng) {
         viewModelScope.launch {
             try {
+                // TODO: Colocar a chave API no local.properties para segurança
                 val url = "https://maps.googleapis.com/maps/api/directions/json" +
                         "?origin=${origem.latitude},${origem.longitude}" +
                         "&destination=${destino.latitude},${destino.longitude}" +
@@ -248,22 +301,17 @@ class MapViewModel : ViewModel() {
 
                 val body = response.body?.string() ?: return@launch
                 val json = JSONObject(body)
-
                 val routes = json.optJSONArray("routes")
                 if (routes == null || routes.length() == 0) return@launch
 
                 val route = routes.getJSONObject(0)
                 val leg = route.getJSONArray("legs").getJSONObject(0)
 
-                val distanceObj = leg.getJSONObject("distance")
-                val durationObj = leg.getJSONObject("duration")
-
-                _distanceText.value = distanceObj.getString("text")
-                _durationText.value = durationObj.getString("text")
+                _distanceText.value = leg.getJSONObject("distance").getString("text")
+                _durationText.value = leg.getJSONObject("duration").getString("text")
 
                 val polyline = route.getJSONObject("overview_polyline").getString("points")
-                val decoded = PolyUtil.decode(polyline)
-                _routePoints.value = decoded
+                _routePoints.value = PolyUtil.decode(polyline)
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -271,9 +319,57 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // --- LÓGICA DE MINERAÇÃO POR COR (CÂMARA) ---
+    // =========================================================================
+    // --- 6. SISTEMA DE MINERAÇÃO (Cores e Estruturas) ---
+    // =========================================================================
 
-    fun mineBlockFromColor(colorCategory: String) {
+    // Processa a cor vinda da câmara, calcula o nome e inicia a mineração
+    fun processCapturedColor(colorInt: Int) {
+        val colorName = calculateColorName(colorInt)
+        mineBlockFromColor(colorName)
+    }
+
+    private fun calculateColorName(colorInt: Int): String {
+        val r = AndroidColor.red(colorInt)
+        val g = AndroidColor.green(colorInt)
+        val b = AndroidColor.blue(colorInt)
+
+        val hsv = FloatArray(3)
+        AndroidColor.RGBToHSV(r, g, b, hsv)
+
+        val hue = hsv[0]
+        val saturation = hsv[1]
+        val value = hsv[2]
+
+        if (value < 0.20) return "Preto"
+        if (saturation < 0.15) return if (value > 0.85) "Branco" else "Cinzento"
+        if (hue in 15f..60f && value < 0.70) return "Castanho"
+        if (hue < 15f && value < 0.50 && saturation > 0.4) return "Castanho"
+
+        return when {
+            hue < 15f -> "Vermelho"
+            hue < 45f -> "Laranja"
+            hue < 75f -> "Amarelo"
+            hue < 165f -> "Verde"
+            hue < 260f -> "Azul"
+            hue < 330f -> "Roxo"
+            else -> "Vermelho"
+        }
+    }
+
+    private fun mineBlockFromColor(colorCategory: String) {
+        checkCooldownAndMine(2, { m -> "Limite atingido! Espera mais $m min." }) { userRef ->
+            executeMiningColor(colorCategory, userRef)
+        }
+    }
+
+    fun mineBlockFromStructure(iconResId: Int) {
+        checkCooldownAndMine(10, { m -> "Estás cansado! Espera mais $m min." }) { userRef ->
+            executeMiningStructure(iconResId, userRef)
+        }
+    }
+
+    private fun checkCooldownAndMine(maxCount: Int, errorMsg: (Long) -> String, mineAction: (DatabaseReference) -> Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val userRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
         val statusRef = userRef.child("miningStatus")
@@ -289,117 +385,39 @@ class MapViewModel : ViewModel() {
             var canMine = false
 
             if (now - windowStartTime > COOLDOWN_MS) {
-                newCount = 1
-                newStartTime = now
-                canMine = true
+                newCount = 1; newStartTime = now; canMine = true
             } else {
-                if (count < 2) {
-                    newCount = count + 1
-                    canMine = true
+                if (count < maxCount) {
+                    newCount = count + 1; canMine = true
                 } else {
                     val minutesLeft = 15 - ((now - windowStartTime) / 60000)
-                    _miningError.value = "Limite atingido! Espera mais $minutesLeft min até poderes voltar a trabalhar."
+                    _miningError.value = errorMsg(minutesLeft)
                     canMine = false
                 }
             }
-
             if (canMine) {
-                val updates = mapOf(
-                    "count" to newCount,
-                    "windowStartTime" to newStartTime
-                )
-                statusRef.updateChildren(updates)
-                executeMiningColor(colorCategory, userRef)
+                statusRef.updateChildren(mapOf("count" to newCount, "windowStartTime" to newStartTime))
+                mineAction(userRef)
             }
         }
     }
 
     private fun executeMiningColor(colorCategory: String, userRef: DatabaseReference) {
         val (blockId, blockName, baseXp) = getBlockFromColor(colorCategory)
-        val pickaxeLevel = currentUserData?.pickaxeIndex ?: 0
-        val minQty = 1 + pickaxeLevel
-        val maxQty = 5 + (pickaxeLevel * 2)
-        val quantity = Random.nextInt(minQty, maxQty + 1)
-        val totalXp = baseXp * quantity
-
-        val result = MiningResult(
-            blockId = blockId,
-            blockName = blockName,
-            quantity = quantity,
-            xpEarned = totalXp,
-            imageRes = blockDrawable(blockId)
-        )
-
-        userRef.get().addOnSuccessListener { snapshot ->
-            val currentQty = snapshot.child("inventory").child(blockId).getValue(Int::class.java) ?: 0
-            userRef.child("inventory").child(blockId).setValue(currentQty + quantity)
-
-            val currentXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
-            userRef.child("pontosXP").setValue(currentXP + totalXp)
-
-            _miningResult.value = result
-        }
-    }
-
-    // --- LÓGICA DE MINERAÇÃO POR ESTRUTURA (MARCADOR) ---
-
-    fun mineBlockFromStructure(iconResId: Int) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val userRef = FirebaseDatabase.getInstance().getReference("users").child(uid)
-        val statusRef = userRef.child("miningStatus")
-
-        statusRef.get().addOnSuccessListener { snapshot ->
-            val now = System.currentTimeMillis()
-            val windowStartTime = snapshot.child("windowStartTime").getValue(Long::class.java) ?: 0L
-            val count = snapshot.child("count").getValue(Int::class.java) ?: 0
-            val COOLDOWN_MS = 15 * 60 * 1000
-
-            var newCount = count
-            var newStartTime = windowStartTime
-            var canMine = false
-
-            if (now - windowStartTime > COOLDOWN_MS) {
-                newCount = 1
-                newStartTime = now
-                canMine = true
-            } else {
-                if (count < 10) { // Permite mais tentativas em estruturas
-                    newCount = count + 1
-                    canMine = true
-                } else {
-                    val minutesLeft = 15 - ((now - windowStartTime) / 60000)
-                    _miningError.value = "Estás cansado! Espera mais $minutesLeft min para minerar estruturas."
-                    canMine = false
-                }
-            }
-
-            if (canMine) {
-                val updates = mapOf(
-                    "count" to newCount,
-                    "windowStartTime" to newStartTime
-                )
-                statusRef.updateChildren(updates)
-                executeMiningStructure(iconResId, userRef)
-            }
-        }
+        processDrop(blockId, blockName, baseXp, userRef)
     }
 
     private fun executeMiningStructure(iconResId: Int, userRef: DatabaseReference) {
         val (blockId, blockName, baseXp) = getLootTableForIcon(iconResId)
+        processDrop(blockId, blockName, baseXp, userRef)
+    }
 
+    private fun processDrop(blockId: String, blockName: String, baseXp: Int, userRef: DatabaseReference) {
         val pickaxeLevel = currentUserData?.pickaxeIndex ?: 0
-        val minQty = 1 + pickaxeLevel
-        val maxQty = 5 + (pickaxeLevel * 2)
-        val quantity = Random.nextInt(minQty, maxQty + 1)
+        val quantity = Random.nextInt(1 + pickaxeLevel, 6 + (pickaxeLevel * 2))
         val totalXp = baseXp * quantity
 
-        val result = MiningResult(
-            blockId = blockId,
-            blockName = blockName,
-            quantity = quantity,
-            xpEarned = totalXp,
-            imageRes = blockDrawable(blockId)
-        )
+        val result = MiningResult(blockId, blockName, quantity, totalXp, blockDrawable(blockId))
 
         userRef.get().addOnSuccessListener { snapshot ->
             val currentQty = snapshot.child("inventory").child(blockId).getValue(Int::class.java) ?: 0
@@ -412,15 +430,12 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // --- HELPER FUNCTIONS ---
+    // =========================================================================
+    // --- 7. HELPERS (Loot Tables & Drawables) ---
+    // =========================================================================
 
-    fun clearMiningError() {
-        _miningError.value = null
-    }
-
-    fun clearMiningResult() {
-        _miningResult.value = null
-    }
+    fun clearMiningError() { _miningError.value = null }
+    fun clearMiningResult() { _miningResult.value = null }
 
     private fun blockDrawable(id: String): Int {
         return when (id) {
@@ -439,49 +454,15 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    fun getBlockFromColor(color: String): Triple<String, String, Int> {
+    private fun getBlockFromColor(color: String): Triple<String, String, Int> {
         val rand = Random.nextDouble()
         return when (color) {
-            "Cinzento" -> {
-                when {
-                    rand < 0.70 -> Triple("stone", "Pedra", 1)
-                    rand < 0.90 -> Triple("iron", "Ferro", 5)
-                    else -> Triple("coal", "Carvão", 3)
-                }
-            }
-            "Castanho" -> {
-                when {
-                    rand < 0.60 -> Triple("dirt", "Terra", 1)
-                    rand < 0.90 -> Triple("wood", "Madeira", 2)
-                    else -> Triple("gold", "Ouro", 10)
-                }
-            }
-            "Verde" -> {
-                when {
-                    rand < 0.55 -> Triple("dirt", "Terra", 1)
-                    rand < 0.90 -> Triple("grace", "Relva", 1)
-                    else -> Triple("emerald", "Esmeralda", 20)
-                }
-            }
-            "Azul" -> {
-                when {
-                    rand < 0.80 -> Triple("lapis", "Lápis-lazúli", 5)
-                    else -> Triple("diamond", "Diamante", 50)
-                }
-            }
-            "Amarelo" -> {
-                when {
-                    rand < 0.70 -> Triple("sand", "Areia", 1)
-                    else -> Triple("gold", "Minério de Ouro", 10)
-                }
-            }
-            "Preto" -> {
-                when {
-                    rand < 0.50 -> Triple("coal", "Carvão", 3)
-                    rand < 0.90 -> Triple("obsidian", "Obsidiana", 15)
-                    else -> Triple("neder", "Netherite", 100)
-                }
-            }
+            "Cinzento" -> if (rand < 0.70) Triple("stone", "Pedra", 1) else if (rand < 0.90) Triple("iron", "Ferro", 5) else Triple("coal", "Carvão", 3)
+            "Castanho" -> if (rand < 0.60) Triple("dirt", "Terra", 1) else if (rand < 0.90) Triple("wood", "Madeira", 2) else Triple("gold", "Ouro", 10)
+            "Verde" -> if (rand < 0.55) Triple("dirt", "Terra", 1) else if (rand < 0.90) Triple("grace", "Relva", 1) else Triple("emerald", "Esmeralda", 20)
+            "Azul" -> if (rand < 0.80) Triple("lapis", "Lápis-lazúli", 5) else Triple("diamond", "Diamante", 50)
+            "Amarelo" -> if (rand < 0.70) Triple("sand", "Areia", 1) else Triple("gold", "Minério de Ouro", 10)
+            "Preto" -> if (rand < 0.50) Triple("coal", "Carvão", 3) else if (rand < 0.90) Triple("obsidian", "Obsidiana", 15) else Triple("neder", "Netherite", 100)
             else -> Triple("stone", "Pedra Misteriosa", 1)
         }
     }
@@ -489,41 +470,11 @@ class MapViewModel : ViewModel() {
     private fun getLootTableForIcon(iconResId: Int): Triple<String, String, Int> {
         val rand = Random.nextDouble()
         return when (iconResId) {
-            R.drawable.castelo -> {
-                when {
-                    rand < 0.60 -> Triple("stone", "Pedra de Castelo", 10)
-                    rand < 0.90 -> Triple("iron", "Ferro Forjado", 25)
-                    else -> Triple("gold", "Tesouro Real", 50)
-                }
-            }
-            R.drawable.arvore -> {
-                when {
-                    rand < 0.70 -> Triple("wood", "Madeira", 5)
-                    rand < 0.95 -> Triple("grace", "Relva", 5)
-                    else -> Triple("emerald", "Esmeralda Perdida", 40)
-                }
-            }
-            R.drawable.calhao -> {
-                when {
-                    rand < 0.50 -> Triple("stone", "Pedra", 5)
-                    rand < 0.90 -> Triple("coal", "Carvão", 15)
-                    else -> Triple("diamond", "Diamante da Mina", 100)
-                }
-            }
-            R.drawable.casas, R.drawable.casass -> {
-                when {
-                    rand < 0.50 -> Triple("dirt", "Terra", 2)
-                    rand < 0.80 -> Triple("wood", "Madeira Trabalhada", 8)
-                    else -> Triple("lapis", "Lápis-lazúli", 20)
-                }
-            }
-            R.drawable.fogo -> {
-                when {
-                    rand < 0.60 -> Triple("coal", "Cinzas", 10)
-                    rand < 0.95 -> Triple("gold", "Ouro Derretido", 30)
-                    else -> Triple("neder", "Netherite Antigo", 150)
-                }
-            }
+            R.drawable.castelo -> if (rand < 0.60) Triple("stone", "Pedra", 10) else if (rand < 0.90) Triple("iron", "Ferro", 25) else Triple("gold", "Ouro", 50)
+            R.drawable.arvore -> if (rand < 0.70) Triple("wood", "Madeira", 5) else if (rand < 0.95) Triple("grace", "Relva", 5) else Triple("emerald", "Esmeralda", 40)
+            R.drawable.calhao -> if (rand < 0.50) Triple("stone", "Pedra", 5) else if (rand < 0.90) Triple("coal", "Carvão", 15) else Triple("diamond", "Diamante", 100)
+            R.drawable.casas, R.drawable.casass -> if (rand < 0.50) Triple("dirt", "Terra", 2) else if (rand < 0.80) Triple("wood", "Madeira", 8) else Triple("lapis", "Lápis-lazúli", 20)
+            R.drawable.fogo -> if (rand < 0.60) Triple("coal", "Cinzas", 10) else if (rand < 0.95) Triple("gold", "Ouro", 30) else Triple("neder", "Netherite", 150)
             else -> Triple("stone", "Pedra Misteriosa", 5)
         }
     }

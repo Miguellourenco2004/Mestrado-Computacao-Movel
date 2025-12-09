@@ -117,7 +117,7 @@ fun LoginScreen(navController: NavController) {
                 ),
                 shape = RectangleShape
             ) {
-                Text(stringResource(id = R.string.password), fontFamily = MineQuestFont)
+                Text(stringResource(id = R.string.login), fontFamily = MineQuestFont)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
