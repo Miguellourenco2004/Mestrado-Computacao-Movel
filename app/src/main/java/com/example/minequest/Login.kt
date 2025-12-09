@@ -93,25 +93,22 @@ fun LoginScreen(navController: NavController) {
                 )
             )
 
-
-
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
                 onClick = {
-                    loading = true
-                    errorMessage = null
-                    auth.signInWithEmailAndPassword(email.trim(), password)
-                        .addOnSuccessListener {
-                            loading = false
+                    handleLoginClick(
+                        auth = auth,
+                        email = email,
+                        password = password,
+                        setLoading = { loading = it },
+                        setError = { errorMessage = it },
+                        onSuccess = {
                             navController.navigate(Screens.Map.route) {
                                 popUpTo(Screens.Login.route) { inclusive = true }
                             }
                         }
-                        .addOnFailureListener {
-                            loading = false
-                            errorMessage = "Error login in: ${it.message}"
-                        }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -134,6 +131,7 @@ fun LoginScreen(navController: NavController) {
                 CircularProgressIndicator()
             }
 
+            // If the message it's not null, it's displayed
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(it, color = MaterialTheme.colorScheme.error)
@@ -141,3 +139,26 @@ fun LoginScreen(navController: NavController) {
         }
     }
 }
+
+fun handleLoginClick(
+    auth: FirebaseAuth,
+    email: String,
+    password: String,
+    setLoading: (Boolean) -> Unit,
+    setError: (String?) -> Unit,
+    onSuccess: () -> Unit
+) {
+    setLoading(true)
+    setError(null)
+
+    auth.signInWithEmailAndPassword(email.trim(), password)
+        .addOnSuccessListener {
+            setLoading(false)
+            onSuccess()
+        }
+        .addOnFailureListener {
+            setLoading(false)
+            setError("Error logging in: ${it.message}")
+        }
+}
+

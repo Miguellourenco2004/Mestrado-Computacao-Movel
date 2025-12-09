@@ -1,6 +1,5 @@
 package com.example.minequest
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,28 +20,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.navigation.NavController
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.database.FirebaseDatabase
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.unit.dp
-import com.example.minequest.ui.theme.MineQuestFont
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.example.minequest.ui.theme.MineQuestFont
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.database.FirebaseDatabase
 
-
+const val topint = 7;
 
 @Composable
 fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
+
     val database = FirebaseDatabase.getInstance().getReference("users")
-    val topint = 7;
+
     // Lista de topPlayers: username, XP, UID
     var topPlayers by remember { mutableStateOf<List<Triple<String, Int, String>>>(emptyList()) }
 
@@ -79,13 +75,11 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Column {
-                topPlayers.forEachIndexed { index, (username, pontosXP, uid) ->
-                    val isCurrentUser = currentUser?.uid == uid
+                topPlayers.forEachIndexed { index, (username, pontosXP) ->
                     RankingItem(
                         rank = index + 1,
                         username = username,
-                        pontosXP = pontosXP,
-                        isCurrentUser = isCurrentUser
+                        pontosXP = pontosXP
                     )
                 }
             }
@@ -94,16 +88,14 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
 }
 
 
-// Definir cores customizadas (ajuste conforme necessário)
-val ItemBackground = Color(0xFFFFFFFF) // Fundo dos itens (branco)
-val XPTextColor = Color(0xFFFF9900)    // Cor do XP (ex: #FF9900)
+val ItemBackground = Color(0xFFFFFFFF)
+val XPTextColor = Color(0xFFFF9900)
 
 @Composable
 fun RankingItem(
     rank: Int,
     username: String,
-    pontosXP: Int,
-    isCurrentUser: Boolean
+    pontosXP: Int
 ) {
 
     Card(
@@ -143,7 +135,7 @@ fun RankingItem(
                 )
             }
 
-            if (rank < 10) {
+            if (rank < topint) {
                 Spacer(
                     modifier = Modifier
                         .fillMaxWidth()

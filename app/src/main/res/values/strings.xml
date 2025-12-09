@@ -4,6 +4,7 @@
     <string name="cancel">Cancel</string>
     <string name="minequest">MineQuest</string>
 
+    // Login e Registo
     <string name="registo">Register</string>
     <string name="login">Login</string>
     <string name="logout">Logout</string>
@@ -11,15 +12,19 @@
     <string name="password">Password</string>
     <string name="confirmar_passoword">Confirm Password</string>
     <string name="username">Username</string>
-    <string name="no_account">Não tens conta? Regista-te</string>
+    <string name="no_account">Don\'t have an account? Register</string>
+    <string name="fill_all_fields">Please fill in all fields.</string>
 
+    // Perfil
     <string name="xp">XP Points</string>
     <string name="drop_item">Drop item?</string>
     <string name="bloco">Block</string>
     <string name="drop">Drop</string>
 
+    // Ranking
     <string name="top_message">🏆 Ranking - Top %1$d Players</string>
 
+    // Upgrade Picareta
     <string name="no_xp_points">You don\'t have the necessary XP Points!</string>
     <string name="no_block">You don\'t have the necessary blocks!</string>
     <string name="no_xp_points_blocks">You don\'t have the necessary XP Points and Blocks!</string>

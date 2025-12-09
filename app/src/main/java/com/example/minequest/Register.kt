@@ -17,11 +17,13 @@ import com.google.firebase.database.FirebaseDatabase
 import com.example.minequest.navigation.Screens
 import com.example.minequest.ui.theme.MineQuestFont
 import androidx.compose.ui.res.stringResource
+import com.google.firebase.database.DatabaseReference
 
 
 @Composable
 fun RegisterScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
+
     val database = FirebaseDatabase.getInstance().getReference("users")
 
     var username by remember { mutableStateOf("") }
@@ -149,74 +151,21 @@ fun RegisterScreen(navController: NavController) {
 
             Button(
                 onClick = {
-                    errorMessage = null
-
-                    if (username.isBlank() || email.isBlank() || password.isBlank()) {
-                        errorMessage = "Please fill in all fields."
-                        return@Button
-                    }
-
-                    if (password != confirmPassword) {
-                        errorMessage = "Passwords do not match."
-                        return@Button
-                    }
-
-                    loading = true
-
-                    // Check if username already exists
-                    database.orderByChild("username").equalTo(username).get()
-                        .addOnSuccessListener { snapshot ->
-                            if (snapshot.exists()) {
-                                loading = false
-                                errorMessage = "This username is already taken."
-                            } else {
-                                auth.createUserWithEmailAndPassword(email.trim(), password)
-                                    .addOnSuccessListener { result ->
-                                        val userId = result.user?.uid ?: return@addOnSuccessListener
-
-                                        // Define a random image to the user profile
-                                        val randomImageName = randomImage()
-
-                                        val initialXP = 0
-
-                                        val pickaxeIndex = 0
-
-                                        // Save the user in the Firebase DB
-                                        val userData = mapOf(
-                                            "username" to username,
-                                            "email" to email,
-                                            "profileImage" to randomImageName,
-                                            "pontosXP" to initialXP,
-                                            "pickaxeIndex" to pickaxeIndex,
-                                            // Inicializa o inventário vazio
-                                            "inventory" to mapOf(
-                                                "dirt" to 1
-                                            )
-                                        )
-
-                                        database.child(userId).setValue(userData)
-                                            .addOnSuccessListener {
-                                                loading = false
-                                                // Navegar para a tela principal
-                                                navController.navigate(Screens.Map.route) {
-                                                    popUpTo(Screens.Register.route) { inclusive = true }
-                                                }
-                                            }
-                                            .addOnFailureListener {
-                                                loading = false
-                                                errorMessage = "Failed to save user data: ${it.message}"
-                                            }
-                                    }
-                                    .addOnFailureListener {
-                                        loading = false
-                                        errorMessage = "Registration failed: ${it.message}"
-                                    }
+                    handleRegisterClick(
+                        username,
+                        email,
+                        password,
+                        confirmPassword,
+                        auth,
+                        database,
+                        setLoading = { loading = it },
+                        setError = { errorMessage = it },
+                        onSuccess = {
+                            navController.navigate(Screens.Map.route) {
+                                popUpTo(Screens.Register.route) { inclusive = true }
                             }
                         }
-                        .addOnFailureListener {
-                            loading = false
-                            errorMessage = "Error checking username: ${it.message}"
-                        }
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -234,18 +183,89 @@ fun RegisterScreen(navController: NavController) {
                 Text("Already have an account? Log in", fontFamily = MineQuestFont, color = Color(0xFF513220))
             }
 
+            // Loader
             if (loading) {
                 Spacer(modifier = Modifier.height(16.dp))
                 CircularProgressIndicator()
             }
 
+            // Error message
             errorMessage?.let {
                 Spacer(modifier = Modifier.height(16.dp))
-                Text(it, color = MaterialTheme.colorScheme.error)
+                Text(it, color = MaterialTheme.colorScheme.error, fontFamily = MineQuestFont)
             }
         }
     }
 }
+
+private fun handleRegisterClick(
+    username: String,
+    email: String,
+    password: String,
+    confirmPassword: String,
+    auth: FirebaseAuth,
+    database: DatabaseReference,
+    setLoading: (Boolean) -> Unit,
+    setError: (String?) -> Unit,
+    onSuccess: () -> Unit
+) {
+
+    if (username.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+        setError("Please fill in all fields.")
+        return
+    }
+
+    if (password != confirmPassword) {
+        setError("Passwords do not match.")
+        return
+    }
+
+    setLoading(true)
+
+    database.orderByChild("username").equalTo(username).get()
+        .addOnSuccessListener { snapshot ->
+            if (snapshot.exists()) {
+                setLoading(false)
+                setError("This username is already taken.")
+                return@addOnSuccessListener
+            }
+
+
+            auth.createUserWithEmailAndPassword(email.trim(), password)
+                .addOnSuccessListener { result ->
+                    val userId = result.user?.uid ?: return@addOnSuccessListener
+
+                    val userData = mapOf(
+                        "username" to username,
+                        "email" to email,
+                        "profileImage" to randomImage(),
+                        "pontosXP" to 0,
+                        "pickaxeIndex" to 0,
+                        // Add 1 block of dirt to the inventory
+                        "inventory" to mapOf("dirt" to 1)
+                    )
+
+                    database.child(userId).setValue(userData)
+                        .addOnSuccessListener {
+                            setLoading(false)
+                            onSuccess()
+                        }
+                        .addOnFailureListener {
+                            setLoading(false)
+                            setError("Failed to save user data: ${it.message}")
+                        }
+                }
+                .addOnFailureListener {
+                    setLoading(false)
+                    setError("Registration failed: ${it.message}")
+                }
+        }
+        .addOnFailureListener {
+            setLoading(false)
+            setError("Error checking username: ${it.message}")
+        }
+}
+
 
 fun randomImage(): String {
     return when ((1..8).random()) {
