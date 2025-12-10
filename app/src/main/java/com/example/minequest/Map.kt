@@ -51,9 +51,8 @@ fun MapScreen(
     navController: NavController,
     viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    // =========================================================================
-    // --- 1. SETUP DE VARIÁVEIS E ESTADOS ---
-    // =========================================================================
+
+    //  SETUP DE VARIÁVEIS E ESTADOS
 
     val context = LocalContext.current
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -72,26 +71,26 @@ fun MapScreen(
     val nearbyMarker by viewModel.nearbyMarker.collectAsState()
     val players by viewModel.players.collectAsState()
 
-    // Listas de Markers (JSON)
+    // Listas de Markers
     val lisboaMarkers by viewModel.lisboaMarkers.collectAsState()
     val setubalMarkers by viewModel.setubalMarkers.collectAsState()
     val portugalMarkers by viewModel.portugalMarkers.collectAsState()
 
-    // Estados locais da UI
+    // Estados da UI
     var query by remember { mutableStateOf("") }
     var showErrorDialog by remember { mutableStateOf(false) }
     var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
 
-    // Câmara do Mapa
+    // Camera
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(38.736946, -9.142685), 12f)
     }
 
-    // =========================================================================
-    // --- 2. PERMISSÕES E LAUNCHERS ---
-    // =========================================================================
 
-    // Launcher da Câmara (Mineração por Cor)
+    //  PERMISSÕES E LAUNCHERS
+
+
+    // Launcher da Câmara
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
@@ -115,9 +114,9 @@ fun MapScreen(
         else Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
     }
 
-    // =========================================================================
-    // --- 3. EFEITOS DE COMPOSIÇÃO (LaunchedEffects) ---
-    // =========================================================================
+
+    // LaunchedEffects
+
 
     // Carregar dados iniciais e localização
     LaunchedEffect(Unit) {
@@ -162,16 +161,11 @@ fun MapScreen(
     LaunchedEffect(destination) {
         destination?.let { cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(it, 17f)) }
     }
-    LaunchedEffect(currentLocation) {
-        // Opcional: só foca no user se não houver destino ativo, ou apenas na 1ª vez
-        if (destination == null && currentLocation != null) {
-            // cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLocation!!, 16f))
-        }
-    }
 
-    // =========================================================================
-    // --- 4. RECURSOS UI (Bitmaps) ---
-    // =========================================================================
+
+
+    //  RECURSOS UI
+
 
     val markerBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
     val userBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
@@ -180,11 +174,11 @@ fun MapScreen(
     fun getUserBitmap(resId: Int) = userBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 48) }
     val userIconRes = getUserImageResource(profileImageName)
 
-    // =========================================================================
-    // --- 5. INTERFACE VISUAL (UI) ---
-    // =========================================================================
 
-    // --- Dialogs ---
+    // INTERFACE VISUAL
+
+
+    //  Dialogs
     if (showErrorDialog && miningError != null) {
         MiningErrorDialog(miningError!!) { showErrorDialog = false; viewModel.clearMiningError() }
     }
@@ -194,7 +188,7 @@ fun MapScreen(
 
     Box(Modifier.fillMaxSize()) {
 
-        // --- 5.1 MAPA ---
+        // MAPA
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -226,7 +220,7 @@ fun MapScreen(
                 )
             }
 
-            // Marcador de Destino (Invisível/Lógico)
+            // Marker de Destino Invisível
             destination?.let { dest ->
                 Marker(
                     state = MarkerState(dest), title = null,
@@ -235,18 +229,18 @@ fun MapScreen(
                 )
             }
 
-            // Rota (Linha Vermelha)
+            // Desenhar a rota
             if (routePoints.isNotEmpty()) {
                 Polyline(points = routePoints, width = 16f, color = Color.Red)
             }
 
-            // Marcadores do Mapa (JSON)
+            // Marcadores do Mapa
             val allMapMarkers = lisboaMarkers + setubalMarkers + portugalMarkers
             allMapMarkers.forEach { m ->
-                // Pede ao ViewModel qual ícone usar (garante persistência)
+
                 val iconId = viewModel.getIconForMarker(m.id)
 
-                // Desenha Círculos para área de Lisboa (exemplo)
+                // Desenha Círculos
                 if (m in lisboaMarkers) {
                     Circle(center = LatLng(m.lat, m.lng), radius = 200.0, strokeColor = Color(0xFF513220), fillColor = Color(0x2252A435), strokeWidth = 2f)
                 }
@@ -259,7 +253,7 @@ fun MapScreen(
             }
         }
 
-        // --- 5.2 BARRA DE PESQUISA E OVERLAYS ---
+        // BARRA DE PESQUISA E OVERLAYS
 
         Column(modifier = Modifier.align(Alignment.TopCenter).padding(20.dp).fillMaxWidth(0.9f)) {
             OutlinedTextField(
@@ -302,7 +296,7 @@ fun MapScreen(
             )
         }
 
-        // Painel de Navegação
+        // Painel que aparece quadno do destino
         if (navigationEnabled && distanceText != null && durationText != null) {
             Card(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 90.dp).fillMaxWidth(0.6f)
@@ -316,7 +310,7 @@ fun MapScreen(
             }
         }
 
-        // Botão "Ir"
+        // Botão ir
         if (destination != null && !navigationEnabled) {
             Button(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
@@ -325,7 +319,7 @@ fun MapScreen(
             ) { Text(stringResource(id = R.string.go_there), fontFamily = MineQuestFont, fontSize = 16.sp) }
         }
 
-        // Botão "Cancelar"
+        // Botão cancel
         if (navigationEnabled) {
             Button(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp),
@@ -354,9 +348,9 @@ fun MapScreen(
     }
 }
 
-// =========================================================================
-// --- 6. HELPERS DE UI (Composable Functions) ---
-// =========================================================================
+
+// HELPERS DE UI
+
 
 @Composable
 fun CustomMapMarker(m: MapMarker, bitmapDescriptor: BitmapDescriptor, onClick: (LatLng) -> Unit) {

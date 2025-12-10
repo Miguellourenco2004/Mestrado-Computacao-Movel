@@ -40,11 +40,11 @@ data class MiningResult(
 
 class MapViewModel : ViewModel() {
 
-    // =========================================================================
-    // --- 1. VARIÁVEIS DE ESTADO (StateFlows) ---
-    // =========================================================================
 
-    // --- Marcadores e Jogadores ---
+    //  VARIÁVEIS
+
+
+    // Markers e Jogadores
     private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
     val lisboaMarkers = _lisboaMarkers.asStateFlow()
 
@@ -57,7 +57,7 @@ class MapViewModel : ViewModel() {
     private val _players = MutableStateFlow<List<User>>(emptyList())
     val players = _players.asStateFlow()
 
-    // --- Navegação e Localização ---
+    // Navegação e Localização
     private val _currentLocation = MutableStateFlow<LatLng?>(null)
     val currentLocation = _currentLocation.asStateFlow()
 
@@ -79,7 +79,7 @@ class MapViewModel : ViewModel() {
     private val _navigationEnabled = MutableStateFlow(false)
     val navigationEnabled = _navigationEnabled.asStateFlow()
 
-    // --- Sistema de Mineração (Jogo) ---
+    // Sistema de Mineração-
     private val _nearbyMarker = MutableStateFlow<MapMarker?>(null)
     val nearbyMarker = _nearbyMarker.asStateFlow()
 
@@ -89,21 +89,21 @@ class MapViewModel : ViewModel() {
     private val _miningError = MutableStateFlow<String?>(null)
     val miningError = _miningError.asStateFlow()
 
-    // --- Variáveis Internas (Lógica) ---
+
     private var lastSavedLocation: LatLng? = null
     private var currentUserData: User? = null
     private val INTERACTION_RADIUS_METERS = 200.0
 
-    // Cache para ícones persistentes (Castelo, Arvore, etc.)
+
     private val markerIconCache = mutableMapOf<String, Int>()
     private val availableIcons = listOf(
         R.drawable.arvore, R.drawable.calhao, R.drawable.casas,
         R.drawable.casass, R.drawable.castelo, R.drawable.coiso, R.drawable.fogo
     )
 
-    // =========================================================================
-    // --- 2. INICIALIZAÇÃO ---
-    // =========================================================================
+
+    // INIT
+
     init {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
@@ -117,9 +117,9 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // =========================================================================
-    // --- 3. GESTÃO DE MARCADORES E ÍCONES ---
-    // =========================================================================
+
+    //  GESTÃO DE MARCADORES E ÍCONES
+
 
     fun loadMarkers(context: Context) {
         try {
@@ -177,9 +177,9 @@ class MapViewModel : ViewModel() {
         })
     }
 
-    // =========================================================================
-    // --- 4. LOCALIZAÇÃO E GOOGLE PLACES API ---
-    // =========================================================================
+
+    //  LOCALIZAÇÃO E GOOGLE PLACES API
+
 
     fun setCurrentLocation(latLng: LatLng) {
         _currentLocation.value = latLng
@@ -207,7 +207,7 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // Pesquisa de locais (Autocomplete)
+    // Pesquisa de locais
     fun fetchSuggestions(query: String, placesClient: PlacesClient) {
         if (query.length < 3) {
             _predictions.value = emptyList()
@@ -228,7 +228,7 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // Seleção de local (Fetch Place)
+    // Seleção de local (
     fun selectPlace(placeId: String, placesClient: PlacesClient, onPlaceSelected: (String) -> Unit) {
         val req = FetchPlaceRequest.newInstance(placeId, listOf(Place.Field.LAT_LNG, Place.Field.NAME))
         placesClient.fetchPlace(req).addOnSuccessListener { res ->
@@ -266,9 +266,8 @@ class MapViewModel : ViewModel() {
         _nearbyMarker.value = closest
     }
 
-    // =========================================================================
-    // --- 5. NAVEGAÇÃO (Directions API) ---
-    // =========================================================================
+
+    //NAVEGAÇÃO
 
     fun setDestination(latLng: LatLng?) { _destination.value = latLng }
     fun setPredictions(list: List<Pair<String, String>>) { _predictions.value = list }
@@ -285,7 +284,7 @@ class MapViewModel : ViewModel() {
     fun Rota(origem: LatLng, destino: LatLng) {
         viewModelScope.launch {
             try {
-                // TODO: Colocar a chave API no local.properties para segurança
+
                 val url = "https://maps.googleapis.com/maps/api/directions/json" +
                         "?origin=${origem.latitude},${origem.longitude}" +
                         "&destination=${destino.latitude},${destino.longitude}" +
@@ -319,9 +318,9 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // =========================================================================
-    // --- 6. SISTEMA DE MINERAÇÃO (Cores e Estruturas) ---
-    // =========================================================================
+
+    // SISTEMA DE MINERAÇÃO
+
 
     // Processa a cor vinda da câmara, calcula o nome e inicia a mineração
     fun processCapturedColor(colorInt: Int) {
@@ -430,9 +429,8 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // =========================================================================
-    // --- 7. HELPERS (Loot Tables & Drawables) ---
-    // =========================================================================
+
+    // Loot Tables & Drawables
 
     fun clearMiningError() { _miningError.value = null }
     fun clearMiningResult() { _miningResult.value = null }
