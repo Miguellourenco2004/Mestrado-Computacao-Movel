@@ -47,7 +47,7 @@ fun Profile(
 
     var username by remember { mutableStateOf("User") }
     var profileImageName by remember { mutableStateOf("") }
-    var pontosXP by remember { mutableStateOf(0) }
+    var pontosXP by remember { mutableIntStateOf(0) }
 
     // Vai guardar qual o bloco a dropar
     var slotToDrop by remember { mutableStateOf<InventorySlot?>(null) }
@@ -126,7 +126,7 @@ fun Profile(
 
             // Nome do utilizador
             Text(
-                text = "$username",
+                text = username,
                 fontFamily = MineQuestFont,
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp
