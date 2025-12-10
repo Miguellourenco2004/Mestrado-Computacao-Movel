@@ -33,7 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
-
+import com.google.firebase.database.DatabaseReference
 
 
 @Composable
@@ -56,56 +56,38 @@ fun Profile(
     // vão voltar a ser "fetched" na base de dados
     var reloadTrigger by remember { mutableIntStateOf(0) }
 
-    // Carrega os dados do utilizador (nome + imagem + pontosXP)
-    LaunchedEffect(auth.currentUser) {
-        auth.currentUser?.let { user ->
-            database.child(user.uid).get()
-                .addOnSuccessListener { snapshot ->
-                    username = snapshot.child("username").getValue(String::class.java) ?: "User"
-                    profileImageName = snapshot.child("profileImage").getValue(String::class.java)
-                        ?: "minecraft_creeper_face"
-                    pontosXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
-                }
-                .addOnFailureListener {
-                    username = "User"
-                    pontosXP = 0
-                }
-        }
-    }
-
-    var pickaxeIndex by remember { mutableIntStateOf(1) }
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
-    // Carrega o inventário do utilizador
-    LaunchedEffect(auth.currentUser, reloadTrigger) {
+
+    // Ir buscar os dados do perfil do user
+    LaunchedEffect(auth.currentUser) {
         auth.currentUser?.let { user ->
-            database.child(user.uid).child("pickaxeIndex").get()
-                .addOnSuccessListener { snap ->
-                    pickaxeIndex = snap.getValue(Int::class.java) ?: 1
+            loadUserData(
+                user = user,
+                database = database,
+                onResult = { u, img, xp ->
+                    username = u
+                    profileImageName = img
+                    pontosXP = xp
                 }
-
-            database.child(user.uid).child("inventory").get()
-                .addOnSuccessListener { snapshot ->
-                    val slots = mutableListOf<InventorySlot>()
-                    for (item in snapshot.children) {
-                        val blockId = item.key ?: continue
-                        val quantity = item.getValue(Int::class.java) ?: 0
-                        slots += splitIntoSlots(blockId, quantity)
-                    }
-
-                    val pickaxeSlot = InventorySlot("pickaxe_$pickaxeIndex", 1)
-                    val finalList = mutableListOf<InventorySlot>()
-
-                    finalList += pickaxeSlot
-                    finalList += slots
-
-                    inventorySlots = finalList
-                }
+            )
         }
     }
 
-
     val imageRes = getImageResourceByName(profileImageName)
+
+    // Ir buscar o inventário do user
+    LaunchedEffect(auth.currentUser, reloadTrigger) {
+        auth.currentUser?.let { user ->
+            loadInventory(
+                user = user,
+                database = database,
+                onComplete = { slots ->
+                    inventorySlots = slots
+                }
+            )
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -114,7 +96,6 @@ fun Profile(
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // Imagem do utilizador
             Image(
                 painter = painterResource(id = imageRes),
                 contentDescription = "Profile image",
@@ -124,7 +105,6 @@ fun Profile(
             )
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Nome do utilizador
             Text(
                 text = username,
                 fontFamily = MineQuestFont,
@@ -153,7 +133,7 @@ fun Profile(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botão de logout
+
             Button(
                 onClick = {
                     FirebaseAuth.getInstance().signOut()
@@ -208,6 +188,7 @@ fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier, onCli
             .size(48.dp)
             .border(2.dp, Color.Black)
             .background(Color(0xFF8D8D8D))
+            // Se o slot for diferente de null é clicável
             .clickable(enabled = slot != null) { onClick() }
     ) {
         if (slot != null) {
@@ -295,7 +276,7 @@ fun DropItemDialog(
                 Text(stringResource(id = R.string.bloco) + ": ${slot.blockId}", fontFamily = MineQuestFont, fontSize = 20.sp)
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // --- ZONA DE INPUT (MENOS | TEXTO | MAIS) ---
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
@@ -342,7 +323,7 @@ fun DropItemDialog(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
 
-                    // Botão MAIS (+)
+
                     IconButton(
 
                         onClick = {
@@ -356,7 +337,7 @@ fun DropItemDialog(
                     }
                 }
 
-                // Texto de ajuda (Ex: "Máx: 64")
+
                 Text(
                     text = "Max: ${maxQuantity.roundToInt()}",
                     style = MaterialTheme.typography.labelSmall,
@@ -388,8 +369,58 @@ fun DropItemDialog(
     )
 }
 
+fun loadUserData(
+    user: FirebaseUser,
+    database: DatabaseReference,
+    onResult: (username: String, img: String, xp: Int) -> Unit
+) {
+    database.child(user.uid).get()
+        .addOnSuccessListener { snap ->
+            val username = snap.child("username").getValue(String::class.java) ?: "User"
+            val img = snap.child("profileImage").getValue(String::class.java)
+                ?: "minecraft_creeper_face"
+            val xp = snap.child("pontosXP").getValue(Int::class.java) ?: 0
 
-// Gets the profile image drawbale
+            onResult(username, img, xp)
+        }
+        .addOnFailureListener {
+            onResult("User", "minecraft_creeper_face", 0)
+        }
+}
+
+
+fun loadInventory(
+    user: FirebaseUser,
+    database: DatabaseReference,
+    onComplete: (List<InventorySlot>) -> Unit
+) {
+    database.child(user.uid).child("pickaxeIndex").get()
+        .addOnSuccessListener { pickaxeSnap ->
+
+            val pickaxeIndex = pickaxeSnap.getValue(Int::class.java) ?: 1
+
+            database.child(user.uid).child("inventory").get()
+                .addOnSuccessListener { invSnap ->
+
+                    val slots = mutableListOf<InventorySlot>()
+                    for (item in invSnap.children) {
+                        val id = item.key ?: continue
+                        val qty = item.getValue(Int::class.java) ?: 0
+                        slots += splitIntoSlots(id, qty)
+                    }
+
+                    val finalList = listOf(
+                        InventorySlot("pickaxe_$pickaxeIndex", 1)
+                    ) + slots
+
+                    onComplete(finalList)
+                }
+        }
+}
+
+
+
+
 fun getImageResourceByName(name: String): Int {
     return when (name) {
         "fb9edad1e26f75" -> R.drawable._fb9edad1e26f75

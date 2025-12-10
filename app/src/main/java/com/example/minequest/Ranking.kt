@@ -92,12 +92,7 @@ val ItemBackground = Color(0xFFFFFFFF)
 val XPTextColor = Color(0xFFFF9900)
 
 @Composable
-fun RankingItem(
-    rank: Int,
-    username: String,
-    pontosXP: Int
-) {
-
+fun RankingItem(rank: Int, username: String, pontosXP: Int) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
