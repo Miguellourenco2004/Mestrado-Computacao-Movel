@@ -8,6 +8,13 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Looper
 import android.widget.Toast
+// --- NOVOS IMPORTS PARA O SHAKE ---
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import kotlin.math.sqrt
+// ----------------------------------
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
@@ -26,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -81,6 +89,11 @@ fun MapScreen(
     var showErrorDialog by remember { mutableStateOf(false) }
     var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
 
+    // --- NOVO: Variáveis para a Picareta e Diálogo ---
+    var currentPickaxeLevel by remember { mutableIntStateOf(0) }
+    var showMiningShakeDialog by remember { mutableStateOf(false) }
+    // ------------------------------------------------
+
     // Camera
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(LatLng(38.736946, -9.142685), 12f)
@@ -123,12 +136,16 @@ fun MapScreen(
         viewModel.loadMarkers(context)
         viewModel.loadPlayers()
 
-        // Foto do user
+        // Foto do user E nível da picareta
         val auth = FirebaseAuth.getInstance()
         val db = FirebaseDatabase.getInstance().getReference("users")
         auth.currentUser?.let { user ->
             db.child(user.uid).get().addOnSuccessListener { snap ->
                 profileImageName = snap.child("profileImage").getValue(String::class.java) ?: "minecraft_creeper_face"
+
+                // Ler o nível da picareta
+                val nivel = snap.child("pickaxeIndex").getValue(Int::class.java) ?: 0
+                currentPickaxeLevel = nivel
             }
         }
 
@@ -185,6 +202,30 @@ fun MapScreen(
     if (miningResult != null) {
         MiningSuccessDialog(miningResult!!) { viewModel.clearMiningResult() }
     }
+
+    // --- DIÁLOGO DE MINERAÇÃO POR ABANÃO ---
+    if (showMiningShakeDialog && nearbyMarker != null) {
+        val iconRes = viewModel.getIconForMarker(nearbyMarker!!.id)
+
+        // Obter a imagem da MINHA picareta atual
+        val myPickaxeImage = getPickaxeImageByLevel(currentPickaxeLevel)
+
+        MiningShakeDialog(
+            iconRes = iconRes,
+            structureName = nearbyMarker!!.name,
+            pickaxeImageRes = myPickaxeImage, // Passar a picareta correta
+            onMiningComplete = {
+                // 1. Fechar o diálogo de abanar
+                showMiningShakeDialog = false
+                // 2. Chamar a função real de mineração no ViewModel
+                viewModel.mineBlockFromStructure(iconRes)
+            },
+            onDismiss = {
+                showMiningShakeDialog = false
+            }
+        )
+    }
+    // ---------------------------------------
 
     Box(Modifier.fillMaxSize()) {
 
@@ -329,17 +370,18 @@ fun MapScreen(
         }
 
         // Botão de Mineração de Estrutura
-        if (nearbyMarker != null) {
+        if (nearbyMarker != null && !showMiningShakeDialog) {
             Button(
                 modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).border(width = 3.dp, color = Color(0xFF513220), shape = RectangleShape),
                 contentPadding = PaddingValues(8.dp), shape = RectangleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF513220)),
                 onClick = {
-                    val iconRes = viewModel.getIconForMarker(nearbyMarker!!.id)
-                    viewModel.mineBlockFromStructure(iconRes)
+                    // Agora abre o diálogo de abanão
+                    showMiningShakeDialog = true
                 }
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Mostra sempre uma picareta genérica no botão, ou a do user se preferir
                     Image(painter = painterResource(id = R.drawable.diamond_pickaxe), contentDescription = "Mine", modifier = Modifier.size(24.dp))
                     Text("MINERAR", fontFamily = MineQuestFont, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
@@ -424,5 +466,165 @@ fun getUserImageResource(name: String): Int {
         "big_villager_face" -> R.drawable.big_villager_face
         "images" -> R.drawable.images
         else -> R.drawable.minecraft_creeper_face
+    }
+}
+
+
+// --- NOVAS FUNÇÕES E LOGICA DE SHAKE ---
+
+@Composable
+fun ShakeDetector(
+    context: Context,
+    onShake: () -> Unit
+) {
+    DisposableEffect(Unit) {
+        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+        val listener = object : SensorEventListener {
+            private val SHAKE_THRESHOLD_GRAVITY = 1.5F
+            private var lastShakeTime: Long = 0
+
+            override fun onSensorChanged(event: SensorEvent) {
+                if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                    val x = event.values[0]
+                    val y = event.values[1]
+                    val z = event.values[2]
+
+                    val gX = x / SensorManager.GRAVITY_EARTH
+                    val gY = y / SensorManager.GRAVITY_EARTH
+                    val gZ = z / SensorManager.GRAVITY_EARTH
+
+                    val gForce = sqrt((gX * gX + gY * gY + gZ * gZ).toDouble()).toFloat()
+
+                    if (gForce > SHAKE_THRESHOLD_GRAVITY) {
+                        val now = System.currentTimeMillis()
+                        if (lastShakeTime + 500 < now) {
+                            lastShakeTime = now
+                            onShake()
+                        }
+                    }
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        }
+
+        if (accelerometer != null) {
+            sensorManager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        }
+
+        onDispose {
+            sensorManager.unregisterListener(listener)
+        }
+    }
+}
+
+
+@Composable
+fun MiningShakeDialog(
+    iconRes: Int,
+    structureName: String,
+    pickaxeImageRes: Int, // Agora recebe a imagem da picareta
+    onMiningComplete: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    // Estado do contador de abanões
+    var shakesCount by remember { mutableIntStateOf(0) }
+    val shakesRequired = 5
+
+    // Detetar o abanão
+    ShakeDetector(context = context) {
+        shakesCount++
+        if (shakesCount >= shakesRequired) {
+            onMiningComplete()
+        }
+    }
+
+    // Calcular progresso
+    val progress = (shakesCount.toFloat() / shakesRequired.toFloat()).coerceIn(0f, 1f)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RectangleShape,
+        modifier = Modifier.border(4.dp, Color(0xFF513220), RectangleShape),
+        title = {
+            Text(
+                text = "A Minerar...",
+                fontFamily = MineQuestFont,
+                color = Color(0xFF513220),
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                val rotation = if (shakesCount % 2 == 0) -15f else 15f
+
+                Image(
+                    painter = painterResource(id = pickaxeImageRes), // Usa a picareta correta
+                    contentDescription = "Picareta",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .graphicsLayer { rotationZ = rotation }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Abana o telemóvel para partires o bloco!",
+                    fontFamily = MineQuestFont,
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(10.dp),
+                    color = Color(0xFF52A435),
+                    trackColor = Color.Gray,
+                )
+                Text("${shakesCount}/${shakesRequired}", fontFamily = MineQuestFont)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                shape = RectangleShape
+            ) {
+                Text("Cancelar", fontFamily = MineQuestFont, color = Color.White)
+            }
+        }
+    )
+}
+
+// Função auxiliar para mapear nível -> imagem
+fun getPickaxeImageByLevel(level: Int): Int {
+    return when (level) {
+        0 -> R.drawable.madeira
+        1 -> R.drawable.pedra
+        2 -> R.drawable.ferro
+        3 -> R.drawable.ouro
+        4 -> R.drawable.diamante
+        5 -> R.drawable.netherite
+        else -> R.drawable.madeira
     }
 }

@@ -44,6 +44,7 @@ data class Picareta(
     val culto_blocos: Map<String, Int>,
 )
 
+
 @Composable
 fun MineBlock(
     navController: NavController,
@@ -385,3 +386,5 @@ private fun blockDrawable(id: String): Int {
         else -> R.drawable.bloco_terra
     }
 }
+
+
