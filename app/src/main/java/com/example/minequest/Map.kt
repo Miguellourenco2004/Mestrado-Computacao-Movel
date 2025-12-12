@@ -187,8 +187,8 @@ fun MapScreen(
     val markerBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
     val userBitmapCache = remember { mutableMapOf<Int, BitmapDescriptor>() }
 
-    fun getMarkerBitmap(resId: Int) = markerBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 96) }
-    fun getUserBitmap(resId: Int) = userBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 48) }
+    fun getMarkerBitmap(resId: Int) = markerBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 54) }
+    fun getUserBitmap(resId: Int) = userBitmapCache.getOrPut(resId) { createBitmapDescriptor(context, resId, 30) }
     val userIconRes = getUserImageResource(profileImageName)
 
 
