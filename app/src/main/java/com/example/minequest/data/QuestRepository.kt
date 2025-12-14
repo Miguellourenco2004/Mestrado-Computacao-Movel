@@ -51,7 +51,21 @@ class QuestRepository(private val userId: String) {
             throw IllegalStateException("O catálogo /available_quests/ deve ter pelo menos 2 missões para o sorteio diário.")
         }
 
-        val selectedQuests = allQuests.shuffled().take(2) // Seleciona 2 aleatoriamente
+        // Agrupa missões por tipo
+        val questsByType = allQuests.groupBy { it.type }
+
+        // Requisito: pelo menos 2 tipos diferentes
+        if (questsByType.size < 2) {
+            throw IllegalStateException("É necessário pelo menos 2 tipos de missão diferentes.")
+        }
+
+        // Seleciona 2 tipos diferentes aleatoriamente
+        val selectedTypes = questsByType.keys.shuffled().take(2)
+
+                // Para cada tipo, escolhe 1 missão aleatória
+        val selectedQuests = selectedTypes.map { type ->
+            questsByType[type]!!.random()
+        }
 
         // 4. Salva a nova configuração global
         val newActiveQuestsMap = selectedQuests.associateBy { it.id }
@@ -73,10 +87,33 @@ class QuestRepository(private val userId: String) {
         return snapshot.children.mapNotNull { it.getValue<DailyQuest>() }
     }
 
-    suspend fun getIndividualProgress(questId: String): UserQuestProgress {
-        val progressRef = userProgressRootRef.child(questId)
+    suspend fun getOrCreateIndividualProgress(
+        quest: DailyQuest
+    ): UserQuestProgress {
+
+        val progressRef = userProgressRootRef.child(quest.id)
         val snapshot = progressRef.get().await()
 
-        return snapshot.getValue<UserQuestProgress>() ?: UserQuestProgress()
+        // Se existe progresso e é de hoje → usar
+        if (snapshot.exists()) {
+            val existing = snapshot.getValue<UserQuestProgress>()
+            if (existing != null && isQuestAssignedToday(existing.assignedDate)) {
+                return existing
+            }
+        }
+
+        // Caso contrário → reset/criar novo
+        val newProgress = UserQuestProgress(
+            questDetails = quest,
+            currentProgress = 0,
+            isCompleted = false,
+            assignedDate = System.currentTimeMillis()
+        )
+
+        progressRef.setValue(newProgress).await()
+        return newProgress
     }
+
+
+
 }

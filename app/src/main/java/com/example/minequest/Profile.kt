@@ -587,26 +587,20 @@ fun splitIntoSlots(blockId: String, quantity: Int): List<InventorySlot> {
 suspend fun loadDailyQuestsState(
     questRepository: QuestRepository
 ): DailyQuestUiState {
-    return try {
-        val loadedQuests = questRepository.getOrCreateGlobalDailyQuests()
 
-        val progressMap = loadedQuests.keys.associateWith { questId ->
-            questRepository.getIndividualProgress(questId)
-        }
+    val loadedQuests = questRepository.getOrCreateGlobalDailyQuests()
 
-        DailyQuestUiState(
-            isLoading = false,
-            quests = loadedQuests,
-            progress = progressMap
-        )
-
-    } catch (e: Exception) {
-        DailyQuestUiState(
-            isLoading = false,
-            error = e.message ?: "Erro desconhecido ao carregar missões"
-        )
+    val progressMap = loadedQuests.mapValues { (_, quest) ->
+        questRepository.getOrCreateIndividualProgress(quest)
     }
+
+    return DailyQuestUiState(
+        isLoading = false,
+        quests = loadedQuests,
+        progress = progressMap
+    )
 }
+
 
 
 // Helper function to ad the Quests to the database
