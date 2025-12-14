@@ -62,7 +62,7 @@ class QuestRepository(private val userId: String) {
         // Seleciona 2 tipos diferentes aleatoriamente
         val selectedTypes = questsByType.keys.shuffled().take(2)
 
-                // Para cada tipo, escolhe 1 missão aleatória
+        // Para cada tipo, escolhe 1 missão aleatória
         val selectedQuests = selectedTypes.map { type ->
             questsByType[type]!!.random()
         }

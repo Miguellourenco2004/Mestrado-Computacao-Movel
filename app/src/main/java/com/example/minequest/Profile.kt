@@ -82,9 +82,6 @@ fun Profile(
 
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
-    val scope = rememberCoroutineScope()
-
-
     // Ir buscar os dados do perfil do user
     LaunchedEffect(auth.currentUser) {
         auth.currentUser?.let { user ->
@@ -438,7 +435,7 @@ fun DailyQuestsDisplay(
         when {
             isLoading -> CircularProgressIndicator(Modifier.size(30.dp))
             errorMessage != null -> Text("Erro: $errorMessage", color = Color.Red, fontFamily = MineQuestFont)
-            quests.isEmpty() -> Text("Nenhuma missão ativa.", fontFamily = MineQuestFont)
+            quests.isEmpty() -> Text(stringResource(R.string.no_active_missions), fontFamily = MineQuestFont)
             else -> quests.values.forEach { quest ->
                 val progress = progressMap[quest.id] ?: UserQuestProgress()
                 Row(
@@ -603,7 +600,7 @@ suspend fun loadDailyQuestsState(
 
 
 
-// Helper function to ad the Quests to the database
+// Helper function to add the Quests to the database
 fun uploadInitialQuestsToFirebase(auth: FirebaseAuth) {
     val currentUser = auth.currentUser
     if (currentUser == null) {

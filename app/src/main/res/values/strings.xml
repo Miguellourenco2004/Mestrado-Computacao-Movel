@@ -21,6 +21,7 @@
     <string name="bloco">Block</string>
     <string name="drop">Drop</string>
     <string name="missons">Daily Missions</string>
+    <string name="no_active_missions">No active missions!</string>
 
     // Ranking
     <string name="top_message">🏆 Ranking - Top %1$d Players</string>
