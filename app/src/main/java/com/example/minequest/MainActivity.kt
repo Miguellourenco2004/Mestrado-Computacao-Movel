@@ -36,7 +36,9 @@ import androidx.compose.foundation.background
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color.Companion.Green
+import com.example.minequest.model.QuestCatalog
 import com.google.android.libraries.places.api.Places
+import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
 
@@ -189,6 +191,8 @@ fun MineQuestBottomBar(navController: NavController) {
         )
     }
 }
+
+
 
 
 
