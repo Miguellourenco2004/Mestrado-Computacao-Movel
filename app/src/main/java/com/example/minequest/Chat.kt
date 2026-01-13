@@ -254,42 +254,115 @@ fun Chat(navController: NavHostController) {
 }
 
 
+// Em Chat.kt
+// Em Chat.kt
+
 @Composable
-fun TradeProposalDialog(viewModel: ChatViewModel, onDismiss: () -> Unit) {
-    var offerBlock by remember { mutableStateOf("diamond") }
+fun TradeProposalDialog(
+    viewModel: ChatViewModel,
+    onDismiss: () -> Unit,
+    targetUserId: String? = null
+) {
+    val targetAvailableBlocks by viewModel.targetInventory.collectAsState()
+    val myAvailableBlocks by viewModel.myInventory.collectAsState()
+
+
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        isLoading = true
+        viewModel.loadMyInventory()
+        viewModel.loadTargetInventory(targetUserId)
+
+        kotlinx.coroutines.delay(500)
+        isLoading = false
+    }
+
+
+    var offerBlock by remember { mutableStateOf("") }
     var offerAmount by remember { mutableStateOf("1") }
-    var requestBlock by remember { mutableStateOf("gold") }
+
+    var requestBlock by remember { mutableStateOf("") }
     var requestAmount by remember { mutableStateOf("1") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val availableBlocks = listOf("diamond", "gold", "iron", "coal", "emerald", "stone", "wood", "dirt", "grace", "neder", "lapis")
+
+    LaunchedEffect(myAvailableBlocks) {
+        if (myAvailableBlocks.isNotEmpty()) offerBlock = myAvailableBlocks[0]
+    }
+    LaunchedEffect(targetAvailableBlocks) {
+        if (targetAvailableBlocks.isNotEmpty()) requestBlock = targetAvailableBlocks[0]
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFC6C6C6), RectangleShape).border(3.dp, Color.Black, RectangleShape).padding(16.dp)) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                Text("PROPOSE TRADE", fontFamily = MineQuestFont, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = if (targetUserId == null) "GLOBAL TRADE" else "PRIVATE TRADE",
+                    fontFamily = MineQuestFont, fontSize = 20.sp, fontWeight = FontWeight.Bold
+                )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text("You Give:", fontFamily = MineQuestFont, fontSize = 14.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(onClick = { offerBlock = availableBlocks[(availableBlocks.indexOf(offerBlock) + 1) % availableBlocks.size] }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray), shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black)) {
-                        Image(painter = painterResource(getBlockDrawableChat(offerBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+                Text("You Give (Your Items):", fontFamily = MineQuestFont, fontSize = 14.sp)
+
+
+                if (isLoading) {
+                    Text("Checking...", fontSize = 12.sp, fontFamily = MineQuestFont, color = Color.DarkGray)
+                } else if (myAvailableBlocks.isEmpty()) {
+                    Text("You have no items!", fontSize = 12.sp, fontFamily = MineQuestFont, color = Color.Red)
+                } else {
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(
+                            onClick = {
+                                if (offerBlock.isNotEmpty()) {
+                                    val nextIndex = (myAvailableBlocks.indexOf(offerBlock) + 1) % myAvailableBlocks.size
+                                    offerBlock = myAvailableBlocks[nextIndex]
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                            shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black)
+                        ) {
+                            if (offerBlock.isNotEmpty()) {
+                                Image(painter = painterResource(getBlockDrawableChat(offerBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        BasicTextField(value = offerAmount, onValueChange = { if(it.all { char -> char.isDigit() }) offerAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    BasicTextField(value = offerAmount, onValueChange = { if(it.all { char -> char.isDigit() }) offerAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                 }
+
 
                 Spacer(modifier = Modifier.height(16.dp))
                 Icon(Icons.Default.SwapHoriz, "Trade", tint = Color.White, modifier = Modifier.size(32.dp))
                 Spacer(modifier = Modifier.height(16.dp))
 
+
                 Text("You Want:", fontFamily = MineQuestFont, fontSize = 14.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(onClick = { requestBlock = availableBlocks[(availableBlocks.indexOf(requestBlock) + 1) % availableBlocks.size] }, colors = ButtonDefaults.buttonColors(containerColor = Color.Gray), shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black)) {
-                        Image(painter = painterResource(getBlockDrawableChat(requestBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+
+                if (isLoading) {
+                    Text("Checking...", fontSize = 12.sp, fontFamily = MineQuestFont)
+                } else if (targetAvailableBlocks.isEmpty()) {
+                    Text("No items available!", fontSize = 12.sp, fontFamily = MineQuestFont)
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Button(
+                            onClick = {
+                                if (requestBlock.isNotEmpty()) {
+                                    val nextIndex = (targetAvailableBlocks.indexOf(requestBlock) + 1) % targetAvailableBlocks.size
+                                    requestBlock = targetAvailableBlocks[nextIndex]
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                            shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black)
+                        ) {
+                            if (requestBlock.isNotEmpty()) {
+                                Image(painter = painterResource(getBlockDrawableChat(requestBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        BasicTextField(value = requestAmount, onValueChange = { if(it.all { char -> char.isDigit() }) requestAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    BasicTextField(value = requestAmount, onValueChange = { if(it.all { char -> char.isDigit() }) requestAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                 }
 
                 if (errorMessage != null) {
@@ -298,20 +371,33 @@ fun TradeProposalDialog(viewModel: ChatViewModel, onDismiss: () -> Unit) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
+
                 Row(horizontalArrangement = Arrangement.Center, modifier = Modifier.fillMaxWidth()) {
                     Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = Color.Red), shape = RectangleShape) { Text("Cancel", fontFamily = MineQuestFont) }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Button(onClick = {
-                        val oAmt = offerAmount.toIntOrNull() ?: 0
-                        val rAmt = requestAmount.toIntOrNull() ?: 0
-                        viewModel.sendTradeProposal(offerBlock, oAmt, requestBlock, rAmt, onSuccess = { onDismiss() }, onError = { msg -> errorMessage = msg })
-                    }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), shape = RectangleShape) { Text("Propose", fontFamily = MineQuestFont) }
+                    Button(
+                        onClick = {
+                            val oAmt = offerAmount.toIntOrNull() ?: 0
+                            val rAmt = requestAmount.toIntOrNull() ?: 0
+
+                            if (myAvailableBlocks.isEmpty()) {
+                                errorMessage = "You have nothing!"
+                            } else if (requestBlock.isEmpty()) {
+                                errorMessage = "Invalid Request"
+                            } else {
+                                viewModel.sendTradeProposal(offerBlock, oAmt, requestBlock, rAmt, targetUserId, onSuccess = { onDismiss() }, onError = { msg -> errorMessage = msg })
+                            }
+                        },
+
+                        enabled = !isLoading && myAvailableBlocks.isNotEmpty(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                        shape = RectangleShape
+                    ) { Text("Propose", fontFamily = MineQuestFont) }
                 }
             }
         }
     }
 }
-
 @Composable
 fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
     val database = FirebaseDatabase.getInstance().getReference("users")

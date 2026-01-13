@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,9 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
+import com.example.minequest.model.User
 import com.example.minequest.ui.theme.MineQuestFont
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -100,6 +104,21 @@ fun MapScreen(
     }
 
 
+    // Variável para garantir que só centramos automaticamente na primeira vez
+    var hasCenteredOnUser by remember { mutableStateOf(false) }
+
+    // Efeito que corre sempre que a localização muda
+    LaunchedEffect(currentLocation) {
+        // Se ainda não centrámos e a localização já foi encontrada (não é null)
+        if (!hasCenteredOnUser && currentLocation != null) {
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLocation!!, 17f))
+            hasCenteredOnUser = true // Marca como feito para não repetir
+        }
+    }
+
+
+
+
     //  PERMISSÕES E LAUNCHERS
 
 
@@ -127,8 +146,20 @@ fun MapScreen(
         else Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
     }
 
+    val chatViewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
+        factory = ChatViewModelFactory(LocalContext.current)
+    )
+
+
+
 
     // LaunchedEffects
+
+
+
+// --- NOVO: Estados para controlar os diálogos de interação ---
+    var selectedPlayer by remember { mutableStateOf<User?>(null) }
+    var showTradeDialog by remember { mutableStateOf(false) }
 
 
     // Carregar dados iniciais e localização
@@ -254,8 +285,12 @@ fun MapScreen(
                     icon = getUserBitmap(getUserImageResource(user.profileImage ?: "")),
                     anchor = Offset(0.5f, 0.5f),
                     onClick = {
-                        viewModel.setDestination(playerPos)
+                       /* viewModel.setDestination(playerPos)
                         currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, playerPos) }
+                        true
+
+                        */
+                        selectedPlayer = user
                         true
                     }
                 )
@@ -387,11 +422,179 @@ fun MapScreen(
                 }
             }
         }
+
+        // 1. Mostrar o Perfil do Jogador Clicado
+        if (selectedPlayer != null) {
+            MapPlayerProfileDialog(
+                user = selectedPlayer!!,
+                onDismiss = { selectedPlayer = null },
+                onGoTo = {
+
+                    val dest = LatLng(selectedPlayer!!.lat!!, selectedPlayer!!.lng!!)
+                    viewModel.setDestination(dest)
+
+                    currentLocation?.let { origin ->
+
+                        viewModel.startNavigation()
+
+                        viewModel.Rota(origin, dest)
+                    }
+
+                    selectedPlayer = null
+                },
+                onTradeClick = {
+                    showTradeDialog = true
+                    // Nota: NÃO metemos selectedPlayer a null aqui, precisamos dele para o ID
+                }
+            )
+        }
+// 2. Mostrar o Diálogo de Proposta de Troca
+        if (showTradeDialog && selectedPlayer != null) {
+            TradeProposalDialog(
+                viewModel = chatViewModel,
+                onDismiss = {
+                    showTradeDialog = false
+                    selectedPlayer = null
+                },
+                // Passar o ID do jogador selecionado para a troca ser privada
+                targetUserId = selectedPlayer!!.id
+            )
+        }
     }
+
+
 }
 
 
 // HELPERS DE UI
+
+@Composable
+// Em Map.kt, substitui a função MapPlayerProfileDialog por esta:
+
+fun MapPlayerProfileDialog(
+    user: User,
+    onDismiss: () -> Unit,
+    onGoTo: () -> Unit,
+    onTradeClick: () -> Unit
+) {
+    // Cor da borda estilo madeira (igual ao Chat)
+    val minecraftBorderColor = Color(0xFF6B3B25)
+
+    Dialog(onDismissRequest = onDismiss) {
+        // Caixa Principal
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFC6C6C6), RectangleShape) // Fundo Cinza Claro
+                .border(4.dp, Color.Black, RectangleShape)     // Borda Exterior Preta
+                .padding(4.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, Color.Gray, RectangleShape) // Borda Interior
+                    .padding(16.dp)
+            ) {
+                // --- CABEÇALHO ---
+                Box(modifier = Modifier.border(2.dp, Color.Black, RectangleShape).padding(2.dp)) {
+                    Image(
+                        painter = painterResource(id = getUserImageResource(user.profileImage ?: "steve")),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(Color.Gray)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = user.username ?: "Desconhecido",
+                    fontFamily = MineQuestFont,
+                    color = Color.Black,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                // Texto do Nível com sombra ligeira (opcional, para dar destaque)
+                Text(
+                    text = "Nível Picareta: ${user.pickaxeIndex?.plus(1)}",
+                    fontFamily = MineQuestFont,
+                    color = Color(0xFF555555),
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // --- BOTÕES ESTILO MINECRAFT ---
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Espaço entre botões
+                ) {
+                    // Botão TROCAR (Laranja)
+                    Button(
+                        onClick = onTradeClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000)),
+                        shape = RectangleShape,
+                        // Borda castanha grossa estilo Minecraft
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .border(3.dp, minecraftBorderColor, RectangleShape),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("TROCAR", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Botão IR (Castanho Escuro)
+                    Button(
+                        onClick = onGoTo,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220)),
+                        shape = RectangleShape,
+                        // Borda preta ou mais clara para contraste
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .border(3.dp, Color.Black, RectangleShape),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("IR", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botão FECHAR (Vermelho)
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)), // Vermelho escuro
+                    shape = RectangleShape,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(40.dp)
+                        .border(2.dp, Color.Black, RectangleShape)
+                ) {
+                    Text("FECHAR", fontFamily = MineQuestFont, fontSize = 12.sp, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+
+
+
 
 
 @Composable

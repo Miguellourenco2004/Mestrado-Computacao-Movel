@@ -167,6 +167,12 @@ class MapViewModel : ViewModel() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = snapshot.children.mapNotNull { snap ->
                     val user = snap.getValue(User::class.java) ?: return@mapNotNull null
+
+                    // --- MUDANÇA IMPORTANTE AQUI ---
+                    // Guardar a 'key' do Firebase como o ID do user
+                    user.id = snap.key ?: ""
+                    // -------------------------------
+
                     if (snap.key == myUid) return@mapNotNull null
                     if (user.lat == null || user.lng == null) return@mapNotNull null
                     user

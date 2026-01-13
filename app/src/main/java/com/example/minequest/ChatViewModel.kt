@@ -32,7 +32,8 @@ data class Message(
     val offerBlock: String = "",
     val offerAmount: Int = 0,
     val requestBlock: String = "",
-    val requestAmount: Int = 0
+    val requestAmount: Int = 0,
+    val targetId: String = ""
 )
 
 class ChatViewModel(private val context: Context) : ViewModel() {
@@ -49,6 +50,66 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     private var myUserName: String = "Anonimo"
     private var myPickaxeIndex: Int = 0
     private var myProfileImageName: String = "steve"
+
+
+    private val _targetInventory = MutableStateFlow<List<String>>(emptyList())
+    val targetInventory = _targetInventory.asStateFlow()
+
+    fun loadTargetInventory(targetUserId: String?) {
+
+        if (targetUserId.isNullOrEmpty()) {
+
+            _targetInventory.value = listOf("diamond", "gold", "iron", "coal", "emerald", "stone", "wood", "dirt", "grace", "neder", "lapis")
+            return
+        }
+
+
+        // Se for PRIVADO, vamos ao Firebase ver o que ele tem
+        usersRef.child(targetUserId).child("inventory").get().addOnSuccessListener { snapshot ->
+            val available = mutableListOf<String>()
+            for (child in snapshot.children) {
+                val qty = child.getValue(Int::class.java) ?: 0
+                if (qty > 0) {
+                    available.add(child.key ?: "")
+                }
+            }
+
+            if (available.isEmpty()) available.add("dirt")
+            _targetInventory.value = available
+        }
+    }
+
+
+    private val _myInventory = MutableStateFlow<List<String>>(emptyList())
+    val myInventory = _myInventory.asStateFlow()
+
+    fun loadMyInventory() {
+        if (myUserId.isEmpty()) return
+
+        usersRef.child(myUserId).child("inventory").get().addOnSuccessListener { snapshot ->
+            val owned = mutableListOf<String>()
+            for (child in snapshot.children) {
+                // Tenta ler como Int, se falhar tenta Long, se falhar assume 0
+                val qty = try {
+                    child.getValue(Int::class.java)
+                        ?: child.getValue(Long::class.java)?.toInt()
+                        ?: 0
+                } catch (e: Exception) {
+                    0
+                }
+
+                if (qty > 0) {
+                    owned.add(child.key ?: "")
+                }
+            }
+            _myInventory.value = owned
+        }.addOnFailureListener {
+            // Se falhar, fica vazio
+            _myInventory.value = emptyList()
+        }
+    }
+
+
 
     init {
         val currentUser = auth.currentUser
@@ -155,6 +216,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         offerAmount: Int,
         requestBlock: String,
         requestAmount: Int,
+        targetUserId: String? = null,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
@@ -181,7 +243,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         "offerBlock" to offerBlock,
                         "offerAmount" to offerAmount,
                         "requestBlock" to requestBlock,
-                        "requestAmount" to requestAmount
+                        "requestAmount" to requestAmount,
+                        "targetId" to (targetUserId ?: "")
                     )
 
                     chatRef.push().setValue(tradeMessageMap)
