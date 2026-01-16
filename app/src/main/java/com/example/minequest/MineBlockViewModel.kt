@@ -20,9 +20,8 @@ class MineQuestViewModel : ViewModel() {
 
     private val _pickaxeIndex = MutableStateFlow(0)
 
-    // Variável privada que guarda o estado do inventário (Mapa de Nome do Bloco -> Quantidade)
     private val _inventory = MutableStateFlow<Map<String, Int>>(emptyMap())
-    // Variável pública para ser lida pela UI
+
     val inventory: StateFlow<Map<String, Int>> = _inventory.asStateFlow()
     val pickaxeIndex: StateFlow<Int> = _pickaxeIndex.asStateFlow()
     private val _pontosXP = MutableStateFlow(0)
@@ -83,7 +82,6 @@ class MineQuestViewModel : ViewModel() {
 
         if (currentIndex >= maxIndex) return
 
-        // Verifica se o inventário tem todos os blocos necessários
         val hasAllBlocks = custoDoUpgradebloco.all { (block, requiredAmount) ->
             currentInventory.getOrDefault(block, 0) >= requiredAmount
         }
@@ -92,7 +90,6 @@ class MineQuestViewModel : ViewModel() {
             val newIndex = currentIndex + 1
             val newXP = currentXP - custoDoUpgrade
 
-            // Remove os blocos usados do inventário
             val newInventory = currentInventory.toMutableMap()
             custoDoUpgradebloco.forEach { (block, amount) ->
                 newInventory[block] = (newInventory[block] ?: 0) - amount
@@ -117,9 +114,13 @@ class MineQuestViewModel : ViewModel() {
                 }
         } else {
             var mensagem = ""
-            if(currentXP < custoDoUpgrade && hasAllBlocks) { mensagem += "Não tens pontos de XP necessários!" }
-            else if(currentXP >= custoDoUpgrade && !hasAllBlocks) { mensagem += "Não tens os blocos necessários!" }
-            else {mensagem += "Não tens pontos de XP e os blocos necessários!"}
+            mensagem += if(currentXP < custoDoUpgrade && hasAllBlocks) {
+                "You don't have the necessary XP!"
+            } else if(currentXP >= custoDoUpgrade && !hasAllBlocks) {
+                "You don't have the necessary blocks!\n Go mining!"
+            } else {
+                "You don't have the necessary blocks and XP!"
+            }
             _errorMessage.value = mensagem
         }
     }
