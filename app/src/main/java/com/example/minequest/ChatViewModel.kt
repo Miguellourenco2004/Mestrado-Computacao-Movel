@@ -11,7 +11,7 @@ import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-// --- ATUALIZAÇÃO: Message agora suporta múltiplos itens ---
+// --- DATA CLASS MESSAGE (Atualizada para Multi-Items) ---
 data class Message(
     val id: String = "",
     val senderId: String = "",
@@ -27,7 +27,7 @@ data class Message(
     val isCompleted: Boolean = false,
     val isCancelled: Boolean = false,
 
-    // --- MUDANÇA: Mapas de Blocos -> Quantidade ---
+    // Mapas de Itens: "diamond" -> 5
     val offerItems: Map<String, Int> = emptyMap(),
     val requestItems: Map<String, Int> = emptyMap(),
 
@@ -53,10 +53,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages = _messages.asStateFlow()
 
+    // O meu inventário (Lista simples de chaves para o seletor)
     private val _myInventory = MutableStateFlow<List<String>>(emptyList())
     val myInventory = _myInventory.asStateFlow()
 
-    private val _targetInventory = MutableStateFlow<List<String>>(emptyList())
+    // Inventário do Alvo (Mapa com quantidades para validação)
+    private val _targetInventory = MutableStateFlow<Map<String, Int>>(emptyMap())
     val targetInventory = _targetInventory.asStateFlow()
 
     init {
@@ -91,23 +93,30 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
     fun loadTargetInventory(targetUserId: String?) {
-        // Se for GLOBAL, mostra lista de possíveis
+        // Se for GLOBAL (targetUserId null), simulamos stock infinito de tudo
         if (targetUserId.isNullOrEmpty()) {
-            _targetInventory.value = listOf("diamond", "gold", "iron", "coal", "emerald", "stone", "wood", "dirt", "grace", "neder", "lapis")
+            val allBlocks = listOf("diamond", "gold", "iron", "coal", "emerald", "stone", "wood", "dirt", "grace", "neder", "lapis")
+            // 9999 garante que a validação (qty > available) nunca falha no Global
+            _targetInventory.value = allBlocks.associateWith { 9999 }
             return
         }
 
-        // Se for PRIVADO, lê inventário do alvo
+        // Se for PRIVADO, carregamos o inventário real com quantidades
         usersRef.child(targetUserId).child("inventory").get().addOnSuccessListener { snapshot ->
-            val available = mutableListOf<String>()
+            val available = mutableMapOf<String, Int>()
             for (child in snapshot.children) {
                 val qty = getIntSafe(child, "")
-                if (qty > 0) available.add(child.key ?: "")
+                if (qty > 0) available[child.key ?: ""] = qty
             }
-            if (available.isEmpty()) available.add("dirt")
+
+            // Fallback para evitar erros se estiver vazio
+            if (available.isEmpty()) available["dirt"] = 0
+
             _targetInventory.value = available
         }
     }
+
+    // --- LÓGICA DE DISTÂNCIA E RECOMPENSA ---
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371000 // Metros
@@ -122,15 +131,16 @@ class ChatViewModel(private val context: Context) : ViewModel() {
 
     private fun calculateDeliveryDetails(distanceMeters: Double): Pair<Long, Int> {
         val distanceKm = distanceMeters / 1000
-        val thresholdKm = 1.0
+        val thresholdKm = 1.0 // Podes ajustar este valor
         return if (distanceKm <= thresholdKm) {
             Pair(20 * 1000L, 5) // Perto: 20s, 5 XP
         } else {
-            Pair(20 * 1000L, 15) // Longe: 20s, 15 XP (Ajustar tempos conforme necessário)
+            Pair(20 * 1000L, 15) // Longe: 20s, 15 XP
         }
     }
 
-    //PROPOSTA DE TROCA (MULTI-ITEM)
+
+    // --- ENVIAR PROPOSTA (MULTI-ITEM) ---
 
     fun sendTradeProposal(
         offerItems: Map<String, Int>,
@@ -140,11 +150,11 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         onError: (String) -> Unit
     ) {
         if (offerItems.isEmpty() || requestItems.isEmpty()) {
-            onError("Amounts must be > 0")
+            onError("You must offer and request at least one item.")
             return
         }
 
-        // Verificar se tenho TODOS os itens que estou a oferecer
+        // 1. Verificar se EU tenho stock suficiente para a minha oferta
         usersRef.child(myUserId).child("inventory").get().addOnSuccessListener { snapshot ->
             var hasAllItems = true
 
@@ -157,8 +167,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             }
 
             if (hasAllItems) {
+                // Se tiver items, calcula detalhes da entrega
                 if (targetUserId != null) {
-                    // TROCA PRIVADA (Calcula distância)
+                    // TROCA PRIVADA: Calcula distância real
                     usersRef.child(myUserId).get().addOnSuccessListener { mySnap ->
                         usersRef.child(targetUserId).get().addOnSuccessListener { targetSnap ->
                             val myLat = mySnap.child("lat").getValue(Double::class.java) ?: 0.0
@@ -174,7 +185,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         }
                     }
                 } else {
-                    // TROCA GLOBAL (Tempo fixo 5 min)
+                    // TROCA GLOBAL: Tempo fixo (ex: 5 min)
                     pushTradeMessage(offerItems, requestItems, null, 5 * 60 * 1000L, 20)
                     onSuccess()
                 }
@@ -188,15 +199,15 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         val tradeMessageMap = hashMapOf(
             "senderId" to myUserId,
             "senderName" to myUserName,
-            "text" to if (targetId != null) "Private Trade (${time/60000}m)" else "Global Trade (5m)",
+            "text" to if (targetId != null) "Private Trade" else "Global Trade",
             "timestamp" to System.currentTimeMillis(),
             "pickaxeIndex" to myPickaxeIndex,
             "profileImage" to myProfileImageName,
             "isTrade" to true,
             "isCompleted" to false,
             "isCancelled" to false,
-            "offerItems" to offerItems,     // Salva o Mapa
-            "requestItems" to requestItems, // Salva o Mapa
+            "offerItems" to offerItems,     // Grava o mapa
+            "requestItems" to requestItems, // Grava o mapa
             "targetId" to (targetId ?: ""),
             "deliveryTimeMillis" to time,
             "arrivalTimestamp" to 0L,
@@ -205,7 +216,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         chatRef.push().setValue(tradeMessageMap)
     }
 
-    //ACEITAR TROCA (MULTI-ITEM)
+
+    // --- ACEITAR TROCA (MULTI-ITEM) ---
 
     fun acceptTrade(message: Message, onSuccess: () -> Unit, onError: (String) -> Unit) {
         if (message.isCompleted || message.isCancelled) {
@@ -231,7 +243,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                     }
 
                     if (senderHasEverything) {
-                        // 3. Executar a subtração dos inventários
+                        // 3. Executar a troca (Subtrair inventários)
 
                         // Retirar de MIM
                         for ((block, qty) in message.requestItems) {
@@ -245,7 +257,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                             usersRef.child(message.senderId).child("inventory").child(block).setValue(current - qty)
                         }
 
-                        // 4. Definir hora de chegada
+                        // 4. Marcar hora de chegada
                         val arrivalTime = System.currentTimeMillis() + message.deliveryTimeMillis
                         chatRef.child(message.id).child("arrivalTimestamp").setValue(arrivalTime)
 
@@ -261,32 +273,41 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    //FINALIZAR TROCA (MULTI-ITEM)
+
+    // --- FINALIZAR TROCA (DAR RECOMPENSAS) ---
 
     fun finalizeTrade(message: Message) {
         if (System.currentTimeMillis() < message.arrivalTimestamp) return
 
-        // Eu recebo o que foi ofertado (offerItems)
+        // Eu recebo o que foi ofertado
         for ((block, qty) in message.offerItems) {
             addBlockToInventory(myUserId, block, qty)
         }
 
-        // O outro (sender) recebe o que foi pedido (requestItems)
+        // O sender recebe o que foi pedido
         for ((block, qty) in message.requestItems) {
             addBlockToInventory(message.senderId, block, qty)
         }
 
+        // XP para ambos
         giveXp(myUserId, message.xpReward)
         giveXp(message.senderId, message.xpReward)
 
         chatRef.child(message.id).child("isCompleted").setValue(true)
     }
 
+
+    // --- CANCELAR ---
+
     fun cancelTrade(message: Message) {
+        // Só pode cancelar se ainda não foi aceite (arrivalTimestamp == 0)
         if (message.arrivalTimestamp == 0L) {
             chatRef.child(message.id).child("isCancelled").setValue(true)
         }
     }
+
+
+    // --- MENSAGEM DE TEXTO ---
 
     fun sendMessage(text: String) {
         if (text.isBlank()) return
@@ -320,7 +341,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                     val isCompleted = child.child("isCompleted").getValue(Boolean::class.java) ?: false
                     val isCancelled = child.child("isCancelled").getValue(Boolean::class.java) ?: false
 
-                    // --- Ler MAPAS do Firebase ---
+                    // --- PARSING DOS MAPAS ---
                     val offerItemsMap = mutableMapOf<String, Int>()
                     child.child("offerItems").children.forEach { item ->
                         val qty = item.getValue(Int::class.java) ?: item.getValue(Long::class.java)?.toInt() ?: 0
@@ -332,7 +353,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         val qty = item.getValue(Int::class.java) ?: item.getValue(Long::class.java)?.toInt() ?: 0
                         requestItemsMap[item.key!!] = qty
                     }
-                    // -----------------------------
+                    // -------------------------
 
                     val targetId = getStringSafe(child, "targetId")
                     val deliveryTime = try { child.child("deliveryTimeMillis").getValue(Long::class.java) ?: 0L } catch(e:Exception){0L}
@@ -351,8 +372,8 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         isTrade = isTrade,
                         isCompleted = isCompleted,
                         isCancelled = isCancelled,
-                        offerItems = offerItemsMap,   // Novo
-                        requestItems = requestItemsMap, // Novo
+                        offerItems = offerItemsMap,
+                        requestItems = requestItemsMap,
                         targetId = targetId,
                         deliveryTimeMillis = deliveryTime,
                         arrivalTimestamp = arrivalTime,

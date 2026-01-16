@@ -52,7 +52,7 @@ val OtherBubbleColor = Color(0xFF323232)
 val TradeBubbleColor = Color(0xFFFFA000)
 val BorderColor = Color(0xFF6B3B25)
 
-// --- FUNÇÕES AUXILIARES DE IMAGEM ---
+// --- FUNÇÕES AUXILIARES ---
 fun getPickaxeImage(index: Int): Int {
     return when (index) {
         0 -> R.drawable.madeira
@@ -113,7 +113,7 @@ fun formatTime(timestamp: Long): String {
     }
 }
 
-//NOVO COMPOSABLE PARA EXIBIR LISTA DE ITENS EM LINHA
+// --- NOVO: COMPOSABLE PARA EXIBIR LISTA DE ITENS EM LINHA ---
 @Composable
 fun TradeItemsRow(items: Map<String, Int>) {
     Row(
@@ -149,6 +149,83 @@ fun TradeItemsRow(items: Map<String, Int>) {
     }
 }
 
+// --- NOVO: DIALOG PARA SELEÇÃO EM GRELHA ---
+@Composable
+fun ItemSelectionDialog(
+    availableItems: List<String>,
+    onItemSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFC6C6C6), RectangleShape)
+                .border(3.dp, Color.Black, RectangleShape)
+                .padding(16.dp)
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = "Select Item",
+                    fontFamily = MineQuestFont,
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                if (availableItems.isEmpty()) {
+                    Text("No items available.", fontFamily = MineQuestFont, color = Color.Gray)
+                } else {
+                    val columns = 4
+                    val rows = (availableItems.size + columns - 1) / columns
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for (row in 0 until rows) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                for (col in 0 until columns) {
+                                    val index = row * columns + col
+                                    if (index < availableItems.size) {
+                                        val block = availableItems[index]
+                                        Box(
+                                            modifier = Modifier
+                                                .size(50.dp)
+                                                .background(Color(0xFF8B8B8B))
+                                                .border(2.dp, Color.Black)
+                                                .clickable { onItemSelected(block) }
+                                                .padding(4.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Image(
+                                                painter = painterResource(getBlockDrawableChat(block)),
+                                                contentDescription = null,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.size(50.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                    shape = RectangleShape,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close", fontFamily = MineQuestFont, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+
 // --- ECRÃ PRINCIPAL DO CHAT ---
 @Composable
 fun Chat(navController: NavHostController) {
@@ -158,36 +235,53 @@ fun Chat(navController: NavHostController) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // --- ESTADO PARA AS ABAS (Global vs Inbox) ---
+    // --- ESTADOS ---
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Inbox
     val myUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var selectedUserMessage by remember { mutableStateOf<Message?>(null) }
     var showTradeDialog by remember { mutableStateOf(false) }
+
+    // Controla se a troca é privada (tem um alvo) e o NOME do alvo
+    var tradeTargetUserId by remember { mutableStateOf<String?>(null) }
+    var tradeTargetUserName by remember { mutableStateOf<String?>(null) } // <--- NOVO ESTADO
+
     var tradeErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // FILTRAR AS MENSAGENS (Global: Só Texto | Inbox: Só Trades)
+    // --- 1. FILTRO DE MENSAGENS ---
     val filteredMessages = remember(messages, selectedTab) {
         messages.filter { msg ->
             if (selectedTab == 0) {
+                // Aba Global: Só texto, esconde trades
                 !msg.isTrade
             } else {
+                // Aba Inbox: Trades (Globais ou Privadas para mim/de mim)
                 msg.isTrade && (msg.targetId.isEmpty() || msg.targetId == myUserId || msg.senderId == myUserId)
             }
         }
     }
 
+    // --- 2. SCROLL APENAS AO MUDAR DE ABA ---
     LaunchedEffect(selectedTab) {
         if (filteredMessages.isNotEmpty()) {
             listState.scrollToItem(filteredMessages.size - 1)
         }
     }
 
+    // --- DIALOGS ---
+
     // Dialog de Perfil
     if (selectedUserMessage != null) {
         UserProfileDialog(
             message = selectedUserMessage!!,
-            onDismiss = { selectedUserMessage = null }
+            onDismiss = { selectedUserMessage = null },
+            onStartTrade = {
+                // Iniciar troca privada com este utilizador
+                tradeTargetUserId = selectedUserMessage!!.senderId
+                tradeTargetUserName = selectedUserMessage!!.senderName // <--- GUARDA O NOME
+                selectedUserMessage = null
+                showTradeDialog = true
+            }
         )
     }
 
@@ -195,8 +289,13 @@ fun Chat(navController: NavHostController) {
     if (showTradeDialog) {
         TradeProposalDialog(
             viewModel = viewModel,
-            onDismiss = { showTradeDialog = false },
-            targetUserId = null
+            onDismiss = {
+                showTradeDialog = false
+                tradeTargetUserId = null
+                tradeTargetUserName = null
+            },
+            targetUserId = tradeTargetUserId,
+            targetUserName = tradeTargetUserName // <--- PASSA O NOME
         )
     }
 
@@ -222,7 +321,7 @@ fun Chat(navController: NavHostController) {
     ) {
         // --- CABEÇALHO ---
         Text(
-            text = if (selectedTab == 0) "Global Chat" else "Trades",
+            text = if (selectedTab == 0) "Global Chat" else "Private and Global Trades",
             fontFamily = MineQuestFont,
             fontSize = 28.sp,
             color = Color.White,
@@ -244,7 +343,7 @@ fun Chat(navController: NavHostController) {
                 colors = ButtonDefaults.buttonColors(containerColor = if (selectedTab == 1) TradeBubbleColor else Color.Gray),
                 shape = RectangleShape,
                 modifier = Modifier.weight(1f).border(2.dp, BorderColor, RectangleShape)
-            ) { Text("Inbox", fontFamily = MineQuestFont, color = Color.White) }
+            ) { Text("Trades", fontFamily = MineQuestFont, color = Color.White) }
         }
 
         // --- LISTA DE MENSAGENS ---
@@ -256,7 +355,6 @@ fun Chat(navController: NavHostController) {
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Usamos a lista já filtrada acima
                 items(filteredMessages) { msg ->
                     ChatBubble(
                         message = msg,
@@ -290,8 +388,13 @@ fun Chat(navController: NavHostController) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Botão de Trade (Global)
                 Button(
-                    onClick = { showTradeDialog = true },
+                    onClick = {
+                        tradeTargetUserId = null
+                        tradeTargetUserName = null // Global não tem nome alvo
+                        showTradeDialog = true
+                    },
                     shape = RectangleShape,
                     colors = ButtonDefaults.buttonColors(containerColor = TradeBubbleColor),
                     modifier = Modifier.size(50.dp).border(2.dp, BorderColor, RectangleShape),
@@ -330,14 +433,16 @@ fun Chat(navController: NavHostController) {
     }
 }
 
-// --- DIALOG DE PROPOSTA DE TROCA (ATUALIZADO PARA MULTI-ITEMS) ---
+// --- DIALOG DE PROPOSTA DE TROCA (ATUALIZADO) ---
 @Composable
 fun TradeProposalDialog(
     viewModel: ChatViewModel,
     onDismiss: () -> Unit,
-    targetUserId: String? = null
+    targetUserId: String? = null,
+    targetUserName: String? = null // <--- NOVO PARÂMETRO
 ) {
-    val targetAvailableBlocks by viewModel.targetInventory.collectAsState()
+    val targetInventoryMap by viewModel.targetInventory.collectAsState()
+    val targetAvailableBlocks = remember(targetInventoryMap) { targetInventoryMap.keys.toList() }
     val myAvailableBlocks by viewModel.myInventory.collectAsState()
 
     var isLoading by remember { mutableStateOf(true) }
@@ -350,35 +455,34 @@ fun TradeProposalDialog(
         isLoading = false
     }
 
-    // --- ESTADOS PARA LISTA DE ITENS ---
+    // Estados para os itens
     val offerItems = remember { mutableStateMapOf<String, Int>() }
     val requestItems = remember { mutableStateMapOf<String, Int>() }
 
     // Seletores temporários
     var currentOfferBlock by remember { mutableStateOf("") }
     var currentOfferAmount by remember { mutableStateOf("1") }
-
     var currentRequestBlock by remember { mutableStateOf("") }
     var currentRequestAmount by remember { mutableStateOf("1") }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // --- SELETOR ---
     var showSelector by remember { mutableStateOf(false) }
     var isSelectingForOffer by remember { mutableStateOf(true) } // true = Offer, false = Request
 
+    // Inicializar defaults
     LaunchedEffect(myAvailableBlocks) { if (myAvailableBlocks.isNotEmpty()) currentOfferBlock = myAvailableBlocks[0] }
     LaunchedEffect(targetAvailableBlocks) { if (targetAvailableBlocks.isNotEmpty()) currentRequestBlock = targetAvailableBlocks[0] }
 
+    // Dialog de Seleção (Popup)
     if (showSelector) {
         val itemsToShow = if (isSelectingForOffer) myAvailableBlocks else targetAvailableBlocks
         ItemSelectionDialog(
             availableItems = itemsToShow,
             onItemSelected = { selectedBlock ->
-                if (isSelectingForOffer) {
-                    currentOfferBlock = selectedBlock
-                } else {
-                    currentRequestBlock = selectedBlock
-                }
+                if (isSelectingForOffer) currentOfferBlock = selectedBlock
+                else currentRequestBlock = selectedBlock
                 showSelector = false
             },
             onDismiss = { showSelector = false }
@@ -409,25 +513,17 @@ fun TradeProposalDialog(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                         Button(
-                            onClick = {
-                                isSelectingForOffer = true
-                                showSelector = true
-                            },
+                            onClick = { isSelectingForOffer = true; showSelector = true },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                             shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black).size(40.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            if (currentOfferBlock.isNotEmpty()) {
-                                Image(painter = painterResource(getBlockDrawableChat(currentOfferBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
-                            } else {
-                                Text("?", fontFamily = MineQuestFont)
-                            }
+                            if (currentOfferBlock.isNotEmpty()) Image(painter = painterResource(getBlockDrawableChat(currentOfferBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+                            else Text("?", fontFamily = MineQuestFont)
                         }
-
                         Spacer(modifier = Modifier.width(8.dp))
                         BasicTextField(value = currentOfferAmount, onValueChange = { if(it.all { char -> char.isDigit() }) currentOfferAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-
                         Button(
                             onClick = {
                                 val qty = currentOfferAmount.toIntOrNull() ?: 0
@@ -446,7 +542,7 @@ fun TradeProposalDialog(
                 Icon(Icons.Default.SwapHoriz, "Trade", tint = Color.Black, modifier = Modifier.size(32.dp))
                 Spacer(modifier = Modifier.height(16.dp))
 
-                //YOU WANT
+                // --- YOU WANT ---
                 Text("You Want:", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.Black, modifier = Modifier.align(Alignment.Start))
 
                 if (requestItems.isNotEmpty()) {
@@ -461,31 +557,34 @@ fun TradeProposalDialog(
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                         Button(
-                            onClick = {
-                                isSelectingForOffer = false
-                                showSelector = true
-                            },
+                            onClick = { isSelectingForOffer = false; showSelector = true },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                             shape = RectangleShape, modifier = Modifier.border(1.dp, Color.Black).size(40.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
-                            if (currentRequestBlock.isNotEmpty()) {
-                                Image(painter = painterResource(getBlockDrawableChat(currentRequestBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
-                            } else {
-                                Text("?", fontFamily = MineQuestFont)
-                            }
+                            if (currentRequestBlock.isNotEmpty()) Image(painter = painterResource(getBlockDrawableChat(currentRequestBlock)), contentDescription = null, modifier = Modifier.size(24.dp))
+                            else Text("?", fontFamily = MineQuestFont)
                         }
-
                         Spacer(modifier = Modifier.width(8.dp))
                         BasicTextField(value = currentRequestAmount, onValueChange = { if(it.all { char -> char.isDigit() }) currentRequestAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
 
+                        // --- VERIFICAÇÃO DE STOCK DO ALVO ---
                         Button(
                             onClick = {
                                 val qty = currentRequestAmount.toIntOrNull() ?: 0
                                 if (qty > 0 && currentRequestBlock.isNotEmpty()) {
-                                    val current = requestItems[currentRequestBlock] ?: 0
-                                    requestItems[currentRequestBlock] = current + qty
+                                    val maxAvailable = targetInventoryMap[currentRequestBlock] ?: 0
+                                    val alreadyAdded = requestItems[currentRequestBlock] ?: 0
+
+                                    if ((qty + alreadyAdded) > maxAvailable) {
+                                        // MOSTRA O NOME DO JOGADOR NO ERRO
+                                        val nameToDisplay = targetUserName ?: "Target"
+                                        errorMessage = "$nameToDisplay only has $maxAvailable of $currentRequestBlock!"
+                                    } else {
+                                        requestItems[currentRequestBlock] = alreadyAdded + qty
+                                        errorMessage = null
+                                    }
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
@@ -496,7 +595,7 @@ fun TradeProposalDialog(
 
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(errorMessage!!, color = Color.Red, fontSize = 12.sp, fontFamily = MineQuestFont)
+                    Text(errorMessage!!, color = Color.Red, fontSize = 12.sp, fontFamily = MineQuestFont, textAlign = TextAlign.Center)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -524,8 +623,13 @@ fun TradeProposalDialog(
 
 // DIALOG DE PERFIL DO UTILIZADOR
 @Composable
-fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
+fun UserProfileDialog(
+    message: Message,
+    onDismiss: () -> Unit,
+    onStartTrade: () -> Unit // Callback para iniciar troca
+) {
     val database = FirebaseDatabase.getInstance().getReference("users")
+    val myUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
     var inventorySlots by remember { mutableStateOf<List<ChatInventorySlot>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
@@ -570,6 +674,20 @@ fun UserProfileDialog(message: Message, onDismiss: () -> Unit) {
                 else ChatInventoryGrid(slots = inventorySlots, columns = 4)
 
                 Spacer(modifier = Modifier.height(32.dp))
+
+                // --- BOTÃO DE TRADE PRIVADA ---
+                if (message.senderId != myUserId) {
+                    Button(
+                        onClick = onStartTrade,
+                        colors = ButtonDefaults.buttonColors(containerColor = TradeBubbleColor),
+                        shape = RectangleShape,
+                        modifier = Modifier.fillMaxWidth().border(1.dp, Color.Black)
+                    ) {
+                        Text("Trade with ${message.senderName}", fontFamily = MineQuestFont, color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
                 Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(containerColor = BorderColor), shape = RectangleShape, modifier = Modifier.fillMaxWidth()) {
                     Text("Close", fontFamily = MineQuestFont, color = Color.White)
                 }
@@ -676,7 +794,24 @@ fun ChatBubble(
                     }
                     val statusColor = if(message.isCancelled) Color(0xFF8B0000) else tradeTextColor
 
+                    // TÍTULO DA TROCA
                     Text(text = statusText, fontFamily = MineQuestFont, fontWeight = FontWeight.Bold, color = statusColor)
+
+                    // --- TEXTO INFORMATIVO ---
+                    val infoText = if (message.targetId.isNotEmpty()) {
+                        if (message.isMine) "(Private offer by You)" else "(Private offer by ${message.senderName})"
+                    } else {
+                        if (message.isMine) "(Global offer by You)" else "(Global offer by ${message.senderName})"
+                    }
+
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = infoText,
+                        fontFamily = MineQuestFont,
+                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                    // -------------------------
 
                     Spacer(modifier = Modifier.height(8.dp))
 
@@ -687,7 +822,7 @@ fun ChatBubble(
                             TradeItemsRow(items = message.offerItems)
                         }
 
-                        // --- ÍCONE CORRIGIDO COM PADDING ---
+                        // Seta de troca
                         Icon(
                             imageVector = Icons.Default.SwapHoriz,
                             contentDescription = "Trade",
@@ -754,81 +889,6 @@ fun ChatBubble(
                 }
             } else {
                 Text(text = message.text, color = Color.White, fontFamily = MineQuestFont, fontSize = 16.sp, modifier = Modifier.padding(12.dp))
-            }
-        }
-    }
-}
-
-@Composable
-fun ItemSelectionDialog(
-    availableItems: List<String>,
-    onItemSelected: (String) -> Unit,
-    onDismiss: () -> Unit
-) {
-    Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFC6C6C6), RectangleShape)
-                .border(3.dp, Color.Black, RectangleShape)
-                .padding(16.dp)
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = "Select Item",
-                    fontFamily = MineQuestFont,
-                    fontSize = 20.sp,
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                if (availableItems.isEmpty()) {
-                    Text("No items available.", fontFamily = MineQuestFont, color = Color.Gray)
-                } else {
-                    val columns = 4
-                    val rows = (availableItems.size + columns - 1) / columns
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for (row in 0 until rows) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                for (col in 0 until columns) {
-                                    val index = row * columns + col
-                                    if (index < availableItems.size) {
-                                        val block = availableItems[index]
-                                        Box(
-                                            modifier = Modifier
-                                                .size(50.dp)
-                                                .background(Color(0xFF8B8B8B))
-                                                .border(2.dp, Color.Black)
-                                                .clickable { onItemSelected(block) }
-                                                .padding(4.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Image(
-                                                painter = painterResource(getBlockDrawableChat(block)),
-                                                contentDescription = null,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
-                                    } else {
-                                        Spacer(modifier = Modifier.size(50.dp))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                    shape = RectangleShape,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Close", fontFamily = MineQuestFont, color = Color.White)
-                }
             }
         }
     }
