@@ -330,20 +330,56 @@ fun Chat(navController: NavHostController) {
         )
 
         // --- BOTÕES DAS ABAS ---
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // --- BOTÕES DAS ABAS (CÓDIGO SUBSTITUTO) ---
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Botão GLOBAL
             Button(
                 onClick = { selectedTab = 0 },
-                colors = ButtonDefaults.buttonColors(containerColor = if (selectedTab == 0) MyBubbleColor else Color.Gray),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedTab == 0) MyBubbleColor else Color.Gray
+                ),
                 shape = RectangleShape,
-                modifier = Modifier.weight(1f).border(2.dp, BorderColor, RectangleShape)
-            ) { Text("Global", fontFamily = MineQuestFont, color = Color.White) }
+                // ESTA LINHA É QUE REMOVE O ESPAÇO INTERNO:
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp) // Força uma altura fixa para encher bem
+                    .border(2.dp, BorderColor, RectangleShape)
+            ) {
+                Text(
+                    text = "Global",
+                    fontFamily = MineQuestFont,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
 
+            // Botão TRADES
             Button(
                 onClick = { selectedTab = 1 },
-                colors = ButtonDefaults.buttonColors(containerColor = if (selectedTab == 1) TradeBubbleColor else Color.Gray),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selectedTab == 1) TradeBubbleColor else Color.Gray
+                ),
                 shape = RectangleShape,
-                modifier = Modifier.weight(1f).border(2.dp, BorderColor, RectangleShape)
-            ) { Text("Trades", fontFamily = MineQuestFont, color = Color.White) }
+                // ESTA LINHA É QUE REMOVE O ESPAÇO INTERNO:
+                contentPadding = PaddingValues(0.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(50.dp) // Força uma altura fixa para encher bem
+                    .border(2.dp, BorderColor, RectangleShape)
+            ) {
+                Text(
+                    text = "Trades",
+                    fontFamily = MineQuestFont,
+                    color = Color.White,
+                    fontSize = 16.sp
+                )
+            }
         }
 
         // --- LISTA DE MENSAGENS ---
@@ -363,7 +399,7 @@ fun Chat(navController: NavHostController) {
                             viewModel.acceptTrade(
                                 messageToAccept,
                                 onSuccess = {
-                                    Toast.makeText(context, "Troca iniciada! A calcular rota...", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Trade started!", Toast.LENGTH_SHORT).show()
                                 },
                                 onError = { errorMsg -> tradeErrorMessage = errorMsg }
                             )
@@ -373,7 +409,7 @@ fun Chat(navController: NavHostController) {
                         },
                         onFinalizeTrade = { messageToFinalize ->
                             viewModel.finalizeTrade(messageToFinalize)
-                            Toast.makeText(context, "Troca Completa! XP Ganho!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Trade Completed!", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

@@ -180,7 +180,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                             val dist = calculateDistance(myLat, myLng, tLat, tLng)
                             val (time, xp) = calculateDeliveryDetails(dist)
 
-                            pushTradeMessage(offerItems, requestItems, targetUserId, time, xp)
+
+                         // adicionar a trade
+                            pushTradeMessage(offerItems, requestItems, targetUserId,10 * 1000L , xp)
                             onSuccess()
                         }
                     }
