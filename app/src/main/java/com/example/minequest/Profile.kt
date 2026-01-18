@@ -61,13 +61,6 @@ fun Profile(
 
     val userId = auth.currentUser?.uid ?: "GUEST_USER_ID"
 
-    val questRepository = remember(userId) { QuestRepository(userId) }
-    var questUiState by remember { mutableStateOf(DailyQuestUiState()) }
-
-
-    // Add quests to the database
-    // uploadInitialQuestsToFirebase(auth)
-
     var username by remember { mutableStateOf("User") }
     var profileImageName by remember { mutableStateOf("") }
     var pontosXP by remember { mutableIntStateOf(0) }
@@ -78,7 +71,6 @@ fun Profile(
     // Estado para recarregar a lista de blocos do inventário -> Qunado mudar os blocos do inventário
     // vão voltar a ser "fetched" na base de dados
     var reloadTrigger by remember { mutableIntStateOf(0) }
-    var questReloadTrigger by remember { mutableIntStateOf(0) }
 
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
@@ -110,12 +102,6 @@ fun Profile(
                 }
             )
         }
-    }
-
-    // Missões globais e progresso individual
-    LaunchedEffect(userId, questReloadTrigger) {
-        questUiState = DailyQuestUiState(isLoading = true)
-        questUiState = loadDailyQuestsState(questRepository)
     }
 
     Box(
@@ -162,15 +148,6 @@ fun Profile(
                     if (slot.blockId.startsWith("pickaxe_")) return@InventoryGrid
                     slotToDrop = slot
                 }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            DailyQuestsDisplay(
-                quests = questUiState.quests,
-                progressMap = questUiState.progress,
-                isLoading = questUiState.isLoading,
-                errorMessage = questUiState.error
             )
 
 
@@ -416,57 +393,6 @@ fun DropItemDialog(
     )
 }
 
-@Composable
-fun DailyQuestsDisplay(
-    quests: Map<String, DailyQuest>,
-    progressMap: Map<String, UserQuestProgress>,
-    isLoading: Boolean,
-    errorMessage: String?
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = stringResource(R.string.missons),
-            fontFamily = MineQuestFont,
-            fontWeight = FontWeight.Bold,
-            fontSize = 22.sp
-        )
-        Spacer(Modifier.height(10.dp))
-
-        when {
-            isLoading -> CircularProgressIndicator(Modifier.size(30.dp))
-            errorMessage != null -> Text("Erro: $errorMessage", color = Color.Red, fontFamily = MineQuestFont)
-            quests.isEmpty() -> Text(stringResource(R.string.no_active_missions), fontFamily = MineQuestFont)
-            else -> quests.values.forEach { quest ->
-                val progress = progressMap[quest.id] ?: UserQuestProgress()
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .padding(vertical = 4.dp)
-                        .background(Color(0xFF8D8D8D))
-                        .border(1.dp, Color.Black)
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = progress.isCompleted,
-                        onCheckedChange = null,
-                        enabled = false
-                    )
-                    Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                        Text(quest.description, fontFamily = MineQuestFont, fontWeight = FontWeight.Bold)
-                        LinearProgressIndicator(
-                            progress = (progress.currentProgress / quest.target.toFloat()).coerceIn(0f,1f),
-                            modifier = Modifier.fillMaxWidth().height(6.dp)
-                        )
-                        Text("${progress.currentProgress} / ${quest.target}", fontSize = 12.sp)
-                    }
-                    Text("+${quest.reward} XP", fontWeight = FontWeight.Bold, modifier = Modifier.padding(start = 8.dp))
-                }
-            }
-        }
-    }
-}
-
 fun loadUserData(
     user: FirebaseUser,
     database: DatabaseReference,
@@ -581,42 +507,3 @@ fun splitIntoSlots(blockId: String, quantity: Int): List<InventorySlot> {
     return slots
 }
 
-suspend fun loadDailyQuestsState(
-    questRepository: QuestRepository
-): DailyQuestUiState {
-
-    val loadedQuests = questRepository.getOrCreateGlobalDailyQuests()
-
-    val progressMap = loadedQuests.mapValues { (_, quest) ->
-        questRepository.getOrCreateIndividualProgress(quest)
-    }
-
-    return DailyQuestUiState(
-        isLoading = false,
-        quests = loadedQuests,
-        progress = progressMap
-    )
-}
-
-
-
-// Helper function to add the Quests to the database
-fun uploadInitialQuestsToFirebase(auth: FirebaseAuth) {
-    val currentUser = auth.currentUser
-    if (currentUser == null) {
-        return
-    }
-
-    val database = Firebase.database
-    val questRef = database.getReference("available_quests")
-
-    QuestCatalog.allQuests.forEach { quest ->
-        questRef.child(quest.id).setValue(quest)
-            .addOnSuccessListener {
-                println("Missão ${quest.id} adicionada/atualizada com sucesso.")
-            }
-            .addOnFailureListener { e ->
-                println("Erro ao adicionar missão ${quest.id}: ${e.message}")
-            }
-    }
-}
