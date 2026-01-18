@@ -346,30 +346,32 @@ class MapViewModel : ViewModel() {
         val saturation = hsv[1]
         val value = hsv[2]
 
-        if (value < 0.20) return "Preto"
-        if (saturation < 0.15) return if (value > 0.85) "Branco" else "Cinzento"
-        if (hue in 15f..60f && value < 0.70) return "Castanho"
-        if (hue < 15f && value < 0.50 && saturation > 0.4) return "Castanho"
+        if (value < 0.20) return "Black" // Preto
+        if (saturation < 0.15) return if (value > 0.85) "White" else "Gray" // Branco / Cinzento
+        if (hue in 15f..60f && value < 0.70) return "Brown" // Castanho
+        if (hue < 15f && value < 0.50 && saturation > 0.4) return "Brown" // Castanho
 
         return when {
-            hue < 15f -> "Vermelho"
-            hue < 45f -> "Laranja"
-            hue < 75f -> "Amarelo"
-            hue < 165f -> "Verde"
-            hue < 260f -> "Azul"
-            hue < 330f -> "Roxo"
-            else -> "Vermelho"
+            hue < 15f -> "Red"      // Vermelho
+            hue < 45f -> "Orange"   // Laranja
+            hue < 75f -> "Yellow"   // Amarelo
+            hue < 165f -> "Green"   // Verde
+            hue < 260f -> "Blue"    // Azul
+            hue < 330f -> "Purple"  // Roxo
+            else -> "Red"           // Vermelho
         }
     }
 
     private fun mineBlockFromColor(colorCategory: String) {
-        checkCooldownAndMine(2, { m -> "Limite atingido! Espera mais $m min." }) { userRef ->
+        // "Limite atingido! Espera mais $m min." -> "Limit reached! Wait $m more min."
+        checkCooldownAndMine(2, { m -> "Limit reached! Wait $m more min." }) { userRef ->
             executeMiningColor(colorCategory, userRef)
         }
     }
 
     fun mineBlockFromStructure(iconResId: Int) {
-        checkCooldownAndMine(10, { m -> "Estás cansado! Espera mais $m min." }) { userRef ->
+        // "Estás cansado! Espera mais $m min." -> "You are tired! Wait $m more min."
+        checkCooldownAndMine(10, { m -> "You are tired! Wait $m more min." }) { userRef ->
             executeMiningStructure(iconResId, userRef)
         }
     }
@@ -460,26 +462,28 @@ class MapViewModel : ViewModel() {
 
     private fun getBlockFromColor(color: String): Triple<String, String, Int> {
         val rand = Random.nextDouble()
+        // NOTA: Os nomes das cores aqui devem coincidir com o que é retornado em 'calculateColorName'
         return when (color) {
-            "Cinzento" -> if (rand < 0.70) Triple("stone", "Pedra", 1) else if (rand < 0.90) Triple("iron", "Ferro", 5) else Triple("coal", "Carvão", 3)
-            "Castanho" -> if (rand < 0.60) Triple("dirt", "Terra", 1) else if (rand < 0.90) Triple("wood", "Madeira", 2) else Triple("gold", "Ouro", 10)
-            "Verde" -> if (rand < 0.55) Triple("dirt", "Terra", 1) else if (rand < 0.90) Triple("grace", "Relva", 1) else Triple("emerald", "Esmeralda", 20)
-            "Azul" -> if (rand < 0.80) Triple("lapis", "Lápis-lazúli", 5) else Triple("diamond", "Diamante", 50)
-            "Amarelo" -> if (rand < 0.70) Triple("sand", "Areia", 1) else Triple("gold", "Minério de Ouro", 10)
-            "Preto" -> if (rand < 0.50) Triple("coal", "Carvão", 3) else if (rand < 0.90) Triple("obsidian", "Obsidiana", 15) else Triple("neder", "Netherite", 100)
-            else -> Triple("stone", "Pedra Misteriosa", 1)
+            "Gray" -> if (rand < 0.70) Triple("stone", "Stone", 1) else if (rand < 0.90) Triple("iron", "Iron", 5) else Triple("coal", "Coal", 3)
+            "Brown" -> if (rand < 0.60) Triple("dirt", "Dirt", 1) else if (rand < 0.90) Triple("wood", "Wood", 2) else Triple("gold", "Gold", 10)
+            "Green" -> if (rand < 0.55) Triple("dirt", "Dirt", 1) else if (rand < 0.90) Triple("grace", "Grass", 1) else Triple("emerald", "Emerald", 20)
+            "Blue" -> if (rand < 0.80) Triple("lapis", "Lapis Lazuli", 5) else Triple("diamond", "Diamond", 50)
+            "Yellow" -> if (rand < 0.70) Triple("sand", "Sand", 1) else Triple("gold", "Gold Ore", 10)
+            "Black" -> if (rand < 0.50) Triple("coal", "Coal", 3) else if (rand < 0.90) Triple("obsidian", "Obsidian", 15) else Triple("neder", "Netherite", 100)
+            else -> Triple("stone", "Mysterious Stone", 1)
         }
     }
 
     private fun getLootTableForIcon(iconResId: Int): Triple<String, String, Int> {
         val rand = Random.nextDouble()
         return when (iconResId) {
-            R.drawable.castelo -> if (rand < 0.60) Triple("stone", "Pedra", 10) else if (rand < 0.90) Triple("iron", "Ferro", 25) else Triple("gold", "Ouro", 50)
-            R.drawable.arvore -> if (rand < 0.70) Triple("wood", "Madeira", 5) else if (rand < 0.95) Triple("grace", "Relva", 5) else Triple("emerald", "Esmeralda", 40)
-            R.drawable.calhao -> if (rand < 0.50) Triple("stone", "Pedra", 5) else if (rand < 0.90) Triple("coal", "Carvão", 15) else Triple("diamond", "Diamante", 100)
-            R.drawable.casas, R.drawable.casass -> if (rand < 0.50) Triple("dirt", "Terra", 2) else if (rand < 0.80) Triple("wood", "Madeira", 8) else Triple("lapis", "Lápis-lazúli", 20)
-            R.drawable.fogo -> if (rand < 0.60) Triple("coal", "Cinzas", 10) else if (rand < 0.95) Triple("gold", "Ouro", 30) else Triple("neder", "Netherite", 150)
-            else -> Triple("stone", "Pedra Misteriosa", 5)
+            R.drawable.castelo -> if (rand < 0.60) Triple("stone", "Stone", 10) else if (rand < 0.90) Triple("iron", "Iron", 25) else Triple("gold", "Gold", 50)
+            R.drawable.arvore -> if (rand < 0.70) Triple("wood", "Wood", 5) else if (rand < 0.95) Triple("grace", "Grass", 5) else Triple("emerald", "Emerald", 40)
+            R.drawable.calhao -> if (rand < 0.50) Triple("stone", "Stone", 5) else if (rand < 0.90) Triple("coal", "Coal", 15) else Triple("diamond", "Diamond", 100)
+            R.drawable.casas, R.drawable.casass -> if (rand < 0.50) Triple("dirt", "Dirt", 2) else if (rand < 0.80) Triple("wood", "Wood", 8) else Triple("lapis", "Lapis Lazuli", 20)
+            R.drawable.fogo -> if (rand < 0.60) Triple("coal", "Coal", 10) else if (rand < 0.95) Triple("gold", "Gold", 30) else Triple("neder", "Netherite", 150)
+            R.drawable.coiso -> if (rand < 0.40) Triple("coal", "Coal", 10) else if (rand < 0.95) Triple("gold", "Gold", 30) else Triple("neder", "Netherite", 150)
+            else -> Triple("stone", "Mysterious Stone", 5)
         }
     }
 }

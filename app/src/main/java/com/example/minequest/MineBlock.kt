@@ -10,6 +10,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+// --- IMPORT PARA SCROLL ---
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+// -------------------------
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -134,6 +138,8 @@ fun MineBlock(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // --- ALTERAÇÃO 1: Scroll adicionado aqui ---
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -152,7 +158,7 @@ fun MineBlock(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    // --- ALTERAÇÃO 2: Removido weight(1f) para não conflitar com scroll ---
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -314,7 +320,9 @@ fun MineBlock(
                     )
                 }
 
-                Spacer(modifier = Modifier.weight(1f)) // Empurra a Row para baixo
+                // --- ALTERAÇÃO 3: Substituído weight por altura fixa ---
+                // Spacer(modifier = Modifier.weight(1f)) <- Antigo
+                Spacer(modifier = Modifier.height(50.dp)) // <- Novo
 
                 Text(text = stringResource(id = R.string.all_pickaxes), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)
 
@@ -386,5 +394,3 @@ private fun blockDrawable(id: String): Int {
         else -> R.drawable.bloco_terra
     }
 }
-
-

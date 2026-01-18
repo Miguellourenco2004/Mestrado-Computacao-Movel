@@ -303,6 +303,12 @@
   ],
   "setubal": [
     {
+      "id": "rua_bela_rosa",
+      "name": "Rua Bela Rosa",
+      "lat": 38.646885,
+      "lng": -9.014626
+    },
+    {
       "id": "set_0",
       "name": "Praia da Figueirinha",
       "lat": 38.4804,

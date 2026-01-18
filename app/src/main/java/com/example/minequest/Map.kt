@@ -133,7 +133,8 @@ fun MapScreen(
                     // Chama o ViewModel para processar a cor
                     viewModel.processCapturedColor(swatch.rgb)
                 } else {
-                    Toast.makeText(context, "Não foi possível detetar cor", Toast.LENGTH_SHORT).show()
+                    // TRADUZIDO: "Could not detect color"
+                    Toast.makeText(context, "Could not detect color", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -271,8 +272,9 @@ fun MapScreen(
         ) {
             // Player Local
             currentLocation?.let { pos ->
+                // TRADUZIDO: "Eu" -> "Me"
                 Marker(
-                    state = MarkerState(pos), title = "Eu",
+                    state = MarkerState(pos), title = "Me",
                     icon = getUserBitmap(userIconRes), anchor = Offset(0.5f, 0.5f)
                 )
             }
@@ -285,11 +287,11 @@ fun MapScreen(
                     icon = getUserBitmap(getUserImageResource(user.profileImage ?: "")),
                     anchor = Offset(0.5f, 0.5f),
                     onClick = {
-                       /* viewModel.setDestination(playerPos)
-                        currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, playerPos) }
-                        true
+                        /* viewModel.setDestination(playerPos)
+                         currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, playerPos) }
+                         true
 
-                        */
+                         */
                         selectedPlayer = user
                         true
                     }
@@ -418,7 +420,8 @@ fun MapScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     // Mostra sempre uma picareta genérica no botão, ou a do user se preferir
                     Image(painter = painterResource(id = R.drawable.diamond_pickaxe), contentDescription = "Mine", modifier = Modifier.size(24.dp))
-                    Text("MINERAR", fontFamily = MineQuestFont, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                    // TRADUZIDO: "MINERAR" -> "MINE"
+                    Text("MINE", fontFamily = MineQuestFont, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -509,8 +512,9 @@ fun MapPlayerProfileDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // TRADUZIDO: "Desconhecido" -> "Unknown"
                 Text(
-                    text = user.username ?: "Desconhecido",
+                    text = user.username ?: "Unknown",
                     fontFamily = MineQuestFont,
                     color = Color.Black,
                     fontSize = 22.sp,
@@ -518,9 +522,9 @@ fun MapPlayerProfileDialog(
                     textAlign = TextAlign.Center
                 )
 
-                // Texto do Nível com sombra ligeira (opcional, para dar destaque)
+                // TRADUZIDO: "Nível Picareta" -> "Pickaxe Level"
                 Text(
-                    text = "Nível Picareta: ${user.pickaxeIndex?.plus(1)}",
+                    text = "Pickaxe Level: ${user.pickaxeIndex?.plus(1)}",
                     fontFamily = MineQuestFont,
                     color = Color(0xFF555555),
                     fontSize = 16.sp,
@@ -549,7 +553,8 @@ fun MapPlayerProfileDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("TROCAR", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            // TRADUZIDO: "TROCAR" -> "TRADE"
+                            Text("TRADE", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -568,7 +573,8 @@ fun MapPlayerProfileDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("IR", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                            // TRADUZIDO: "IR" -> "GO"
+                            Text("GO", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -585,7 +591,8 @@ fun MapPlayerProfileDialog(
                         .height(40.dp)
                         .border(2.dp, Color.Black, RectangleShape)
                 ) {
-                    Text("FECHAR", fontFamily = MineQuestFont, fontSize = 12.sp, color = Color.White)
+                    // TRADUZIDO: "FECHAR" -> "CLOSE"
+                    Text("CLOSE", fontFamily = MineQuestFont, fontSize = 12.sp, color = Color.White)
                 }
             }
         }
@@ -755,8 +762,9 @@ fun MiningShakeDialog(
         shape = RectangleShape,
         modifier = Modifier.border(4.dp, Color(0xFF513220), RectangleShape),
         title = {
+            // TRADUZIDO: "A Minerar..." -> "Mining..."
             Text(
-                text = "A Minerar...",
+                text = "Mining...",
                 fontFamily = MineQuestFont,
                 color = Color(0xFF513220),
                 fontWeight = FontWeight.Bold,
@@ -781,7 +789,8 @@ fun MiningShakeDialog(
 
                 Image(
                     painter = painterResource(id = pickaxeImageRes), // Usa a picareta correta
-                    contentDescription = "Picareta",
+                    // TRADUZIDO: "Picareta" -> "Pickaxe"
+                    contentDescription = "Pickaxe",
                     modifier = Modifier
                         .size(100.dp)
                         .graphicsLayer { rotationZ = rotation }
@@ -789,8 +798,9 @@ fun MiningShakeDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // TRADUZIDO: "Abana o telemóvel para partires o bloco!" -> "Shake your phone to break the block!"
                 Text(
-                    text = "Abana o telemóvel para partires o bloco!",
+                    text = "Shake your phone to break the block!",
                     fontFamily = MineQuestFont,
                     textAlign = TextAlign.Center,
                     fontSize = 14.sp
@@ -813,7 +823,8 @@ fun MiningShakeDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 shape = RectangleShape
             ) {
-                Text("Cancelar", fontFamily = MineQuestFont, color = Color.White)
+                // TRADUZIDO: "Cancelar" -> "Cancel"
+                Text("Cancel", fontFamily = MineQuestFont, color = Color.White)
             }
         }
     )
