@@ -4,6 +4,12 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.minequest.model.User
+// --- NOVOS IMPORTS PARA AS MISSÕES ---
+import com.example.minequest.model.QuestType
+import com.example.minequest.model.UserQuestProgress
+import kotlinx.coroutines.tasks.await
+import java.util.Calendar
+// -------------------------------------
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
@@ -29,7 +35,7 @@ import org.json.JSONObject
 import kotlin.random.Random
 import android.graphics.Color as AndroidColor
 
-// Classe de dados para resultados da mineração
+// Mantemos o resultado simples, como pediste
 data class MiningResult(
     val blockId: String,
     val blockName: String,
@@ -40,9 +46,7 @@ data class MiningResult(
 
 class MapViewModel : ViewModel() {
 
-
     //  VARIÁVEIS
-
 
     // Markers e Jogadores
     private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
@@ -79,7 +83,7 @@ class MapViewModel : ViewModel() {
     private val _navigationEnabled = MutableStateFlow(false)
     val navigationEnabled = _navigationEnabled.asStateFlow()
 
-    // Sistema de Mineração-
+    // Sistema de Mineração
     private val _nearbyMarker = MutableStateFlow<MapMarker?>(null)
     val nearbyMarker = _nearbyMarker.asStateFlow()
 
@@ -89,11 +93,9 @@ class MapViewModel : ViewModel() {
     private val _miningError = MutableStateFlow<String?>(null)
     val miningError = _miningError.asStateFlow()
 
-
     private var lastSavedLocation: LatLng? = null
     private var currentUserData: User? = null
     private val INTERACTION_RADIUS_METERS = 200.0
-
 
     private val markerIconCache = mutableMapOf<String, Int>()
     private val availableIcons = listOf(
@@ -103,7 +105,6 @@ class MapViewModel : ViewModel() {
 
 
     // INIT
-
     init {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
@@ -119,7 +120,6 @@ class MapViewModel : ViewModel() {
 
 
     //  GESTÃO DE MARCADORES E ÍCONES
-
 
     fun loadMarkers(context: Context) {
         try {
@@ -152,7 +152,6 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // Retorna um ícone fixo para um dado ID de marcador
     fun getIconForMarker(markerId: String): Int {
         return markerIconCache.getOrPut(markerId) {
             availableIcons.random()
@@ -167,12 +166,7 @@ class MapViewModel : ViewModel() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = snapshot.children.mapNotNull { snap ->
                     val user = snap.getValue(User::class.java) ?: return@mapNotNull null
-
-                    // --- MUDANÇA IMPORTANTE AQUI ---
-                    // Guardar a 'key' do Firebase como o ID do user
                     user.id = snap.key ?: ""
-                    // -------------------------------
-
                     if (snap.key == myUid) return@mapNotNull null
                     if (user.lat == null || user.lng == null) return@mapNotNull null
                     user
@@ -185,7 +179,6 @@ class MapViewModel : ViewModel() {
 
 
     //  LOCALIZAÇÃO E GOOGLE PLACES API
-
 
     fun setCurrentLocation(latLng: LatLng) {
         _currentLocation.value = latLng
@@ -213,7 +206,6 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // Pesquisa de locais
     fun fetchSuggestions(query: String, placesClient: PlacesClient) {
         if (query.length < 3) {
             _predictions.value = emptyList()
@@ -234,7 +226,6 @@ class MapViewModel : ViewModel() {
         }
     }
 
-    // Seleção de local (
     fun selectPlace(placeId: String, placesClient: PlacesClient, onPlaceSelected: (String) -> Unit) {
         val req = FetchPlaceRequest.newInstance(placeId, listOf(Place.Field.LAT_LNG, Place.Field.NAME))
         placesClient.fetchPlace(req).addOnSuccessListener { res ->
@@ -273,7 +264,7 @@ class MapViewModel : ViewModel() {
     }
 
 
-    //NAVEGAÇÃO
+    // NAVEGAÇÃO
 
     fun setDestination(latLng: LatLng?) { _destination.value = latLng }
     fun setPredictions(list: List<Pair<String, String>>) { _predictions.value = list }
@@ -290,7 +281,6 @@ class MapViewModel : ViewModel() {
     fun Rota(origem: LatLng, destino: LatLng) {
         viewModelScope.launch {
             try {
-
                 val url = "https://maps.googleapis.com/maps/api/directions/json" +
                         "?origin=${origem.latitude},${origem.longitude}" +
                         "&destination=${destino.latitude},${destino.longitude}" +
@@ -327,8 +317,6 @@ class MapViewModel : ViewModel() {
 
     // SISTEMA DE MINERAÇÃO
 
-
-    // Processa a cor vinda da câmara, calcula o nome e inicia a mineração
     fun processCapturedColor(colorInt: Int) {
         val colorName = calculateColorName(colorInt)
         mineBlockFromColor(colorName)
@@ -346,31 +334,29 @@ class MapViewModel : ViewModel() {
         val saturation = hsv[1]
         val value = hsv[2]
 
-        if (value < 0.20) return "Black" // Preto
-        if (saturation < 0.15) return if (value > 0.85) "White" else "Gray" // Branco / Cinzento
-        if (hue in 15f..60f && value < 0.70) return "Brown" // Castanho
-        if (hue < 15f && value < 0.50 && saturation > 0.4) return "Brown" // Castanho
+        if (value < 0.20) return "Black"
+        if (saturation < 0.15) return if (value > 0.85) "White" else "Gray"
+        if (hue in 15f..60f && value < 0.70) return "Brown"
+        if (hue < 15f && value < 0.50 && saturation > 0.4) return "Brown"
 
         return when {
-            hue < 15f -> "Red"      // Vermelho
-            hue < 45f -> "Orange"   // Laranja
-            hue < 75f -> "Yellow"   // Amarelo
-            hue < 165f -> "Green"   // Verde
-            hue < 260f -> "Blue"    // Azul
-            hue < 330f -> "Purple"  // Roxo
-            else -> "Red"           // Vermelho
+            hue < 15f -> "Red"
+            hue < 45f -> "Orange"
+            hue < 75f -> "Yellow"
+            hue < 165f -> "Green"
+            hue < 260f -> "Blue"
+            hue < 330f -> "Purple"
+            else -> "Red"
         }
     }
 
     private fun mineBlockFromColor(colorCategory: String) {
-        // "Limite atingido! Espera mais $m min." -> "Limit reached! Wait $m more min."
         checkCooldownAndMine(2, { m -> "Limit reached! Wait $m more min." }) { userRef ->
             executeMiningColor(colorCategory, userRef)
         }
     }
 
     fun mineBlockFromStructure(iconResId: Int) {
-        // "Estás cansado! Espera mais $m min." -> "You are tired! Wait $m more min."
         checkCooldownAndMine(10, { m -> "You are tired! Wait $m more min." }) { userRef ->
             executeMiningStructure(iconResId, userRef)
         }
@@ -419,21 +405,75 @@ class MapViewModel : ViewModel() {
         processDrop(blockId, blockName, baseXp, userRef)
     }
 
+    // --- FUNÇÃO AUXILIAR PARA VERIFICAR A DATA DA MISSÃO ---
+    private fun isQuestAssignedToday(assignedDate: Long): Boolean {
+        if (assignedDate == 0L) return false
+        val assignedCal = Calendar.getInstance().apply { timeInMillis = assignedDate }
+        val todayCal = Calendar.getInstance()
+        return assignedCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                assignedCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
+    }
+
+    // --- FUNÇÃO PROCESSDROP ATUALIZADA (COM LÓGICA DE MISSÕES) ---
     private fun processDrop(blockId: String, blockName: String, baseXp: Int, userRef: DatabaseReference) {
-        val pickaxeLevel = currentUserData?.pickaxeIndex ?: 0
-        val quantity = Random.nextInt(1 + pickaxeLevel, 6 + (pickaxeLevel * 2))
-        val totalXp = baseXp * quantity
+        viewModelScope.launch {
+            try {
+                // 1. Cálculos iniciais da mineração
+                val pickaxeLevel = currentUserData?.pickaxeIndex ?: 0
+                val quantity = Random.nextInt(1 + pickaxeLevel, 6 + (pickaxeLevel * 2))
+                var totalXp = baseXp * quantity
 
-        val result = MiningResult(blockId, blockName, quantity, totalXp, blockDrawable(blockId))
+                // 2. Lógica de Missões (Silenciosa)
+                // Verifica se há alguma missão de MINERAR e atualiza o progresso
+                val questsRef = userRef.child("quest_progress")
 
-        userRef.get().addOnSuccessListener { snapshot ->
-            val currentQty = snapshot.child("inventory").child(blockId).getValue(Int::class.java) ?: 0
-            userRef.child("inventory").child(blockId).setValue(currentQty + quantity)
+                // 'await()' permite ler os dados de forma síncrona dentro da coroutine
+                val questsSnapshot = questsRef.get().await()
 
-            val currentXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
-            userRef.child("pontosXP").setValue(currentXP + totalXp)
+                for (child in questsSnapshot.children) {
+                    val progress = child.getValue(UserQuestProgress::class.java) ?: continue
 
-            _miningResult.value = result
+                    // Verifica: Missão não completa + Tipo MINE_BLOCKS + Atribuída hoje
+                    if (!progress.isCompleted &&
+                        progress.questDetails?.type == QuestType.MINE_BLOCKS &&
+                        isQuestAssignedToday(progress.assignedDate)) {
+
+                        val target = progress.questDetails.target
+                        val newProgressValue = (progress.currentProgress + quantity).coerceAtMost(target)
+                        var isCompletedNow = false
+
+                        // Se atingiu o objetivo
+                        if (newProgressValue >= target) {
+                            isCompletedNow = true
+                            // Adiciona a recompensa da missão ao XP total desta mineração
+                            totalXp += progress.questDetails.reward
+                        }
+
+                        // Atualiza o progresso no Firebase
+                        // O Ranking "ouve" isto e vai atualizar a barra automaticamente!
+                        val updates = mapOf(
+                            "currentProgress" to newProgressValue,
+                            "isCompleted" to isCompletedNow
+                        )
+                        child.ref.updateChildren(updates).await()
+                    }
+                }
+
+                // 3. Atualizar Inventário e XP do User (com o total já somado)
+                val snapshot = userRef.get().await()
+                val currentQty = snapshot.child("inventory").child(blockId).getValue(Int::class.java) ?: 0
+                val currentXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
+
+                userRef.child("inventory").child(blockId).setValue(currentQty + quantity).await()
+                userRef.child("pontosXP").setValue(currentXP + totalXp).await()
+
+                // 4. Mostrar resultado (sem mensagem de missão, apenas o XP total)
+                _miningResult.value = MiningResult(blockId, blockName, quantity, totalXp, blockDrawable(blockId))
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                _miningError.value = "Error processing mining."
+            }
         }
     }
 
@@ -453,7 +493,7 @@ class MapViewModel : ViewModel() {
             "stone" -> R.drawable.bloco_pedra
             "dirt" -> R.drawable.bloco_terra
             "grace" -> R.drawable.grace
-            "wood" -> R.drawable.madeira
+            "wood" -> R.drawable.wood
             "lapis" -> R.drawable.lapis
             "neder" -> R.drawable.netherite_b
             else -> R.drawable.bloco_terra
@@ -462,7 +502,6 @@ class MapViewModel : ViewModel() {
 
     private fun getBlockFromColor(color: String): Triple<String, String, Int> {
         val rand = Random.nextDouble()
-        // NOTA: Os nomes das cores aqui devem coincidir com o que é retornado em 'calculateColorName'
         return when (color) {
             "Gray" -> if (rand < 0.70) Triple("stone", "Stone", 1) else if (rand < 0.90) Triple("iron", "Iron", 5) else Triple("coal", "Coal", 3)
             "Brown" -> if (rand < 0.60) Triple("dirt", "Dirt", 1) else if (rand < 0.90) Triple("wood", "Wood", 2) else Triple("gold", "Gold", 10)

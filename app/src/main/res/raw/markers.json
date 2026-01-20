@@ -1,6 +1,13 @@
 {
   "lisboa": [
     {
+      "id": "fcul",
+      "name": "Fcul",
+      "lat": 38.7565,
+      "lng": -9.1554
+    },
+
+    {
       "id": "lis_0",
       "name": "Miradouro da Senhora do Monte",
       "lat": 38.72047,

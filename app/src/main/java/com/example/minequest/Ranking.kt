@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -222,9 +223,16 @@ fun DailyQuestsDisplay(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        checked = progress.isCompleted,
-                        onCheckedChange = null,
-                        enabled = false
+                        // ALTERAÇÃO AQUI:
+                        // O visto aparece se a missão estiver marcada como completa OU se o progresso já atingiu o alvo
+                        checked = progress.isCompleted || progress.currentProgress >= quest.target,
+
+                        onCheckedChange = {},
+                        enabled = false,
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Color(0xFF52A435),
+                            checkmarkColor = Color.White
+                        )
                     )
                     Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                         Text(quest.description, fontFamily = MineQuestFont, fontWeight = FontWeight.Bold)
