@@ -26,10 +26,12 @@ fun RegisterScreen(navController: NavController) {
 
     val database = FirebaseDatabase.getInstance().getReference("users")
 
+    // Input variables
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
 

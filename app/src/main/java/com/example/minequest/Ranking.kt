@@ -48,9 +48,17 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
-import kotlin.collections.forEach
 
+// Variável a alterar no caso de querermos mudar o número de players no rank
 const val topint = 7;
+
+data class DailyQuestUiState(
+    val isLoading: Boolean = true,
+    val quests: Map<String, DailyQuest> = emptyMap(),
+    val progress: Map<String, UserQuestProgress> = emptyMap(),
+    val error: String? = null
+)
+
 
 @Composable
 fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
@@ -60,15 +68,17 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
     val database = FirebaseDatabase.getInstance().getReference("users")
 
     val userId = auth.currentUser?.uid ?: "GUEST_USER_ID"
-
-    val questRepository = remember(userId) { QuestRepository(userId) }
-    var questUiState by remember { mutableStateOf(DailyQuestUiState()) }
-
-    // Add quests to the database
-    uploadInitialQuestsToFirebase(auth)
-
     // Lista de topPlayers: username, XP, UID
     var topPlayers by remember { mutableStateOf<List<Triple<String, Int, String>>>(emptyList()) }
+
+
+    // Variáveis relacionadas com as Quests
+    val questRepository = remember(userId) { QuestRepository(userId) }
+    var questUiState by remember { mutableStateOf(DailyQuestUiState()) }
+    var questReloadTrigger by remember { mutableIntStateOf(0) }
+
+    // Adiciona quests à bd -> DESCOMENTAR NO CASO DE ADICIONAR NOVAS QUESTS
+    // uploadInitialQuestsToFirebase(auth)
 
     LaunchedEffect(currentUser) {
         database.get()
@@ -87,8 +97,6 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
                 topPlayers = emptyList()
             }
     }
-
-    var questReloadTrigger by remember { mutableIntStateOf(0) }
 
 
     // Missões globais e progresso individual
@@ -223,7 +231,6 @@ fun DailyQuestsDisplay(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-
                         checked = progress.isCompleted || progress.currentProgress >= quest.target,
 
                         onCheckedChange = {},
