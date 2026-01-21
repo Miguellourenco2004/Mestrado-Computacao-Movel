@@ -548,7 +548,7 @@ fun MapPlayerProfileDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.SwapHoriz, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(4.dp))
-                            // TRADUZIDO: "TROCAR" -> "TRADE"
+
                             Text("TRADE", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
