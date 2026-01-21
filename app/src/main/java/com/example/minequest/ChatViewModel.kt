@@ -3,9 +3,9 @@ package com.example.minequest
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope // [Novo Import]
-import com.example.minequest.model.QuestType // [Novo Import]
-import com.example.minequest.model.UserQuestProgress // [Novo Import]
+import androidx.lifecycle.viewModelScope
+import com.example.minequest.model.QuestType
+import com.example.minequest.model.UserQuestProgress
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -13,11 +13,11 @@ import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch // [Novo Import]
-import kotlinx.coroutines.tasks.await // [Novo Import]
-import java.util.Calendar // [Novo Import]
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.util.Calendar
 
-// --- DATA CLASS MESSAGE (Mantinada) ---
+
 data class Message(
     val id: String = "",
     val senderId: String = "",
@@ -76,7 +76,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         })
     }
 
-    // --- GESTÃO DE INVENTÁRIOS ---
+    // GESTÃO DE INVENTÁRIOS
 
     fun loadMyInventory() {
         if (myUserId.isEmpty()) return
@@ -107,7 +107,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    // --- LÓGICA DE DISTÂNCIA E RECOMPENSA ---
+    //  LÓGICA DE DISTÂNCIA E RECOMPENSA
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371000
@@ -131,7 +131,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
 
-    // --- ENVIAR PROPOSTA ---
+    //  ENVIAR PROPOSTA
 
     fun sendTradeProposal(
         offerItems: Map<String, Int>,
@@ -203,7 +203,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
 
-    // --- ACEITAR TROCA ---
+    //  ACEITAR TROCA
 
     fun acceptTrade(message: Message, onSuccess: () -> Unit, onError: (String) -> Unit) {
         if (message.isCompleted || message.isCancelled) {
@@ -250,21 +250,20 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
 
-    // --- FINALIZAR TROCA (COM MISSÕES) ---
+    //  FINALIZAR TROCA
 
     fun finalizeTrade(message: Message) {
         if (System.currentTimeMillis() < message.arrivalTimestamp) return
-        if (message.isCompleted) return // Evita duplo clique
+        if (message.isCompleted) return
 
-        // Lança uma corrotina para processar as missões e XP
+
         viewModelScope.launch {
 
-            // 1. Processar Missões para AMBOS os utilizadores (Eu e quem enviou)
-            // A função retorna quanto XP extra cada um ganhou de missões completadas
+
             val questXpMe = processTradeQuests(myUserId)
             val questXpSender = processTradeQuests(message.senderId)
 
-            // 2. Transferir Itens
+
             for ((block, qty) in message.offerItems) {
                 addBlockToInventory(myUserId, block, qty)
             }
@@ -272,20 +271,20 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 addBlockToInventory(message.senderId, block, qty)
             }
 
-            // 3. Dar XP Total (Recompensa da troca + Recompensa das missões)
+
             giveXp(myUserId, message.xpReward + questXpMe)
             giveXp(message.senderId, message.xpReward + questXpSender)
 
-            // 4. Marcar como completada
+
             chatRef.child(message.id).child("isCompleted").setValue(true)
         }
     }
 
-    // --- NOVA FUNÇÃO: PROCESSAR MISSÕES DE TROCA ---
+
     private suspend fun processTradeQuests(userId: String): Int {
         var earnedXp = 0
         try {
-            // Calcular início do dia para filtrar missões antigas
+
             val calendar = Calendar.getInstance()
             calendar.set(Calendar.HOUR_OF_DAY, 0)
             calendar.set(Calendar.MINUTE, 0)
@@ -293,18 +292,18 @@ class ChatViewModel(private val context: Context) : ViewModel() {
             calendar.set(Calendar.MILLISECOND, 0)
             val startOfDay = calendar.timeInMillis.toDouble()
 
-            // Query ao Firebase
+
             val questsRef = usersRef.child(userId).child("quest_progress")
             val snapshot = questsRef.orderByChild("assignedDate").startAt(startOfDay).get().await()
 
             for (child in snapshot.children) {
                 val progress = child.getValue(UserQuestProgress::class.java) ?: continue
 
-                // Verifica: Missão não completa + Tipo TRADE
+
                 if (!progress.isCompleted && progress.questDetails?.type == QuestType.TRADE) {
 
                     val target = progress.questDetails.target
-                    // Incrementa 1 troca
+
                     val newProgressValue = (progress.currentProgress + 1).coerceAtMost(target)
                     var isCompletedNow = false
 
@@ -313,7 +312,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                         earnedXp += progress.questDetails.reward
                     }
 
-                    // Atualiza Firebase
+
                     val updates = mapOf(
                         "currentProgress" to newProgressValue,
                         "isCompleted" to isCompletedNow
@@ -328,7 +327,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
 
-    // --- CANCELAR ---
+    // CANCELAR
 
     fun cancelTrade(message: Message) {
         if (message.arrivalTimestamp == 0L) {
@@ -337,7 +336,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     }
 
 
-    // --- MENSAGEM DE TEXTO ---
+    // MENSAGEM DE TEXTO
 
     fun sendMessage(text: String) {
         if (text.isBlank()) return
@@ -415,7 +414,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
         })
     }
 
-    // --- Helpers Genéricos ---
+
 
     private fun addBlockToInventory(userId: String, block: String, amount: Int) {
         val ref = usersRef.child(userId).child("inventory").child(block)

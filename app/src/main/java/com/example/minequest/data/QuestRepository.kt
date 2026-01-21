@@ -19,7 +19,7 @@ class QuestRepository(private val userId: String) {
 
     private val userProgressRootRef: DatabaseReference = Firebase.database.getReference("users").child(userId).child("quest_progress")
 
-    // Verifica se o timestamp (data de atribuição) está dentro do dia atual.
+
     private fun isQuestAssignedToday(assignedDate: Long): Boolean {
         if (assignedDate == 0L) return false
 
@@ -30,23 +30,23 @@ class QuestRepository(private val userId: String) {
                 assignedCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
     }
 
-    // Verifica o nó global e sorteia duas novas missões se o dia mudou
+
     suspend fun getOrCreateGlobalDailyQuests(): Map<String, DailyQuest> {
 
-        // 1. Tenta ler o controle de eventos global
+
         val snapshot = globalQuestsRef.get().await()
         val globalQuests = snapshot.getValue<GlobalDailyQuests>() ?: GlobalDailyQuests()
 
-        // 2. Verifica se a Missão Global já foi sorteada hoje
+
         if (isQuestAssignedToday(globalQuests.assignedDate)) {
             // Se já foi sorteada, retorna as missões existentes.
             return globalQuests.activeQuests
         }
 
-        // 3. SE FOR O PRIMEIRO ACESSO DO DIA, realiza o sorteio
+
         val allQuests = fetchAllAvailableQuests()
 
-        // Requisito: O catálogo deve ter pelo menos 2 missões
+
         if (allQuests.size < 2) {
             throw IllegalStateException("O catálogo /available_quests/ deve ter pelo menos 2 missões para o sorteio diário.")
         }
@@ -54,12 +54,12 @@ class QuestRepository(private val userId: String) {
         // Agrupa missões por tipo
         val questsByType = allQuests.groupBy { it.type }
 
-        // Requisito: pelo menos 2 tipos diferentes
+
         if (questsByType.size < 2) {
             throw IllegalStateException("É necessário pelo menos 2 tipos de missão diferentes.")
         }
 
-        // Seleciona 2 tipos diferentes aleatoriamente
+
         val selectedTypes = questsByType.keys.shuffled().take(2)
 
         // Para cada tipo, escolhe 1 missão aleatória
@@ -67,7 +67,7 @@ class QuestRepository(private val userId: String) {
             questsByType[type]!!.random()
         }
 
-        // 4. Salva a nova configuração global
+
         val newActiveQuestsMap = selectedQuests.associateBy { it.id }
 
         val newGlobalQuests = GlobalDailyQuests(
@@ -75,7 +75,7 @@ class QuestRepository(private val userId: String) {
             activeQuests = newActiveQuestsMap
         )
 
-        // 5. Escreve a nova seleção no nó de controle global
+
         globalQuestsRef.setValue(newGlobalQuests).await()
 
         return newActiveQuestsMap

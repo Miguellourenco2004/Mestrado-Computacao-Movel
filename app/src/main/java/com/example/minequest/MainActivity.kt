@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
             Places.initialize(applicationContext, "AIzaSyDopLW7DqJf2wQG97_iiOuEKpYWj__arpo")
         }
 
-        //  Escreve algo no Realtime Database
+
         val database = Firebase.database
         val ref = database.getReference("teste_minequest")
 
@@ -104,7 +104,7 @@ fun MineQuestApp() {
 
     val auth = com.google.firebase.auth.FirebaseAuth.getInstance()
 
-    // Track user state reactively
+
     var currentUser by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(auth.currentUser) }
 
     androidx.compose.runtime.DisposableEffect(Unit) {

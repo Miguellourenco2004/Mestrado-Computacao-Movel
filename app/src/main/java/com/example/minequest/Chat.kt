@@ -45,14 +45,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// --- CORES ---
+//  CORES
 val ChatBackground = Color(0xFF52A435)
 val MyBubbleColor = Color(0xFF52A435)
 val OtherBubbleColor = Color(0xFF323232)
 val TradeBubbleColor = Color(0xFFFFA000)
 val BorderColor = Color(0xFF6B3B25)
 
-// --- FUNÇÕES AUXILIARES ---
+//  FUNÇÕES AUXILIARES
 fun getPickaxeImage(index: Int): Int {
     return when (index) {
         0 -> R.drawable.madeira
@@ -113,7 +113,7 @@ fun formatTime(timestamp: Long): String {
     }
 }
 
-// --- NOVO: COMPOSABLE PARA EXIBIR LISTA DE ITENS EM LINHA ---
+
 @Composable
 fun TradeItemsRow(items: Map<String, Int>) {
     Row(
@@ -149,7 +149,7 @@ fun TradeItemsRow(items: Map<String, Int>) {
     }
 }
 
-// --- NOVO: DIALOG PARA SELEÇÃO EM GRELHA ---
+
 @Composable
 fun ItemSelectionDialog(
     availableItems: List<String>,
@@ -226,7 +226,7 @@ fun ItemSelectionDialog(
 }
 
 
-// --- ECRÃ PRINCIPAL DO CHAT ---
+// ECRÃ PRINCIPAL
 @Composable
 fun Chat(navController: NavHostController) {
     val context = LocalContext.current
@@ -235,40 +235,40 @@ fun Chat(navController: NavHostController) {
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
-    // --- ESTADOS ---
+
     var selectedTab by remember { mutableIntStateOf(0) } // 0 = Global, 1 = Inbox
     val myUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     var selectedUserMessage by remember { mutableStateOf<Message?>(null) }
     var showTradeDialog by remember { mutableStateOf(false) }
 
-    // Controla se a troca é privada (tem um alvo) e o NOME do alvo
+    // Controla se a troca é privada
     var tradeTargetUserId by remember { mutableStateOf<String?>(null) }
-    var tradeTargetUserName by remember { mutableStateOf<String?>(null) } // <--- NOVO ESTADO
+    var tradeTargetUserName by remember { mutableStateOf<String?>(null) }
 
     var tradeErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    // --- 1. FILTRO DE MENSAGENS ---
+
     val filteredMessages = remember(messages, selectedTab) {
         messages.filter { msg ->
             if (selectedTab == 0) {
-                // Aba Global: Só texto, esconde trades
+                // Aba Global só texto
                 !msg.isTrade
             } else {
-                // Aba Inbox: Trades (Globais ou Privadas para mim/de mim)
+                // Aba Inbox so trades Trades
                 msg.isTrade && (msg.targetId.isEmpty() || msg.targetId == myUserId || msg.senderId == myUserId)
             }
         }
     }
 
-    // --- 2. SCROLL APENAS AO MUDAR DE ABA ---
+
     LaunchedEffect(selectedTab) {
         if (filteredMessages.isNotEmpty()) {
             listState.scrollToItem(filteredMessages.size - 1)
         }
     }
 
-    // --- DIALOGS ---
+
 
     // Dialog de Perfil
     if (selectedUserMessage != null) {
@@ -276,16 +276,16 @@ fun Chat(navController: NavHostController) {
             message = selectedUserMessage!!,
             onDismiss = { selectedUserMessage = null },
             onStartTrade = {
-                // Iniciar troca privada com este utilizador
+
                 tradeTargetUserId = selectedUserMessage!!.senderId
-                tradeTargetUserName = selectedUserMessage!!.senderName // <--- GUARDA O NOME
+                tradeTargetUserName = selectedUserMessage!!.senderName
                 selectedUserMessage = null
                 showTradeDialog = true
             }
         )
     }
 
-    // Dialog de Proposta
+
     if (showTradeDialog) {
         TradeProposalDialog(
             viewModel = viewModel,
@@ -295,11 +295,11 @@ fun Chat(navController: NavHostController) {
                 tradeTargetUserName = null
             },
             targetUserId = tradeTargetUserId,
-            targetUserName = tradeTargetUserName // <--- PASSA O NOME
+            targetUserName = tradeTargetUserName
         )
     }
 
-    // Dialog de Erro
+
     if (tradeErrorMessage != null) {
         AlertDialog(
             onDismissRequest = { tradeErrorMessage = null },
@@ -319,7 +319,7 @@ fun Chat(navController: NavHostController) {
     Column(
         modifier = Modifier.fillMaxSize().background(ChatBackground).padding(16.dp).imePadding()
     ) {
-        // --- CABEÇALHO ---
+
         Text(
             text = if (selectedTab == 0) "Global Chat" else "Private and Global Trades",
             fontFamily = MineQuestFont,
@@ -329,26 +329,25 @@ fun Chat(navController: NavHostController) {
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(bottom = 8.dp)
         )
 
-        // --- BOTÕES DAS ABAS ---
-        // --- BOTÕES DAS ABAS (CÓDIGO SUBSTITUTO) ---
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Botão GLOBAL
+
             Button(
                 onClick = { selectedTab = 0 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedTab == 0) MyBubbleColor else Color.Gray
                 ),
                 shape = RectangleShape,
-                // ESTA LINHA É QUE REMOVE O ESPAÇO INTERNO:
+
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .height(50.dp) // Força uma altura fixa para encher bem
+                    .height(50.dp)
                     .border(2.dp, BorderColor, RectangleShape)
             ) {
                 Text(
@@ -359,14 +358,14 @@ fun Chat(navController: NavHostController) {
                 )
             }
 
-            // Botão TRADES
+
             Button(
                 onClick = { selectedTab = 1 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (selectedTab == 1) TradeBubbleColor else Color.Gray
                 ),
                 shape = RectangleShape,
-                // ESTA LINHA É QUE REMOVE O ESPAÇO INTERNO:
+
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
                     .weight(1f)
@@ -382,7 +381,7 @@ fun Chat(navController: NavHostController) {
             }
         }
 
-        // --- LISTA DE MENSAGENS ---
+        //LISTA DE MENSAGENS
         Box(
             modifier = Modifier.weight(1f).background(Color(0x80000000), RectangleShape).border(2.dp, BorderColor, RectangleShape).padding(8.dp)
         ) {
@@ -418,17 +417,17 @@ fun Chat(navController: NavHostController) {
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // --- INPUT (Apenas na aba Global) ---
+        // Apenas na aba Global
         if (selectedTab == 0) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Botão de Trade (Global)
+
                 Button(
                     onClick = {
                         tradeTargetUserId = null
-                        tradeTargetUserName = null // Global não tem nome alvo
+                        tradeTargetUserName = null
                         showTradeDialog = true
                     },
                     shape = RectangleShape,
@@ -469,13 +468,13 @@ fun Chat(navController: NavHostController) {
     }
 }
 
-// --- DIALOG DE PROPOSTA DE TROCA (ATUALIZADO) ---
+//DIALOG DE PROPOSTA DE TROCA
 @Composable
 fun TradeProposalDialog(
     viewModel: ChatViewModel,
     onDismiss: () -> Unit,
     targetUserId: String? = null,
-    targetUserName: String? = null // <--- NOVO PARÂMETRO
+    targetUserName: String? = null
 ) {
     val targetInventoryMap by viewModel.targetInventory.collectAsState()
     val targetAvailableBlocks = remember(targetInventoryMap) { targetInventoryMap.keys.toList() }
@@ -503,15 +502,15 @@ fun TradeProposalDialog(
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // --- SELETOR ---
+
     var showSelector by remember { mutableStateOf(false) }
     var isSelectingForOffer by remember { mutableStateOf(true) } // true = Offer, false = Request
 
-    // Inicializar defaults
+
     LaunchedEffect(myAvailableBlocks) { if (myAvailableBlocks.isNotEmpty()) currentOfferBlock = myAvailableBlocks[0] }
     LaunchedEffect(targetAvailableBlocks) { if (targetAvailableBlocks.isNotEmpty()) currentRequestBlock = targetAvailableBlocks[0] }
 
-    // Dialog de Seleção (Popup)
+    // POPUP
     if (showSelector) {
         val itemsToShow = if (isSelectingForOffer) myAvailableBlocks else targetAvailableBlocks
         ItemSelectionDialog(
@@ -534,7 +533,7 @@ fun TradeProposalDialog(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- YOU GIVE ---
+                // YOU GIVE
                 Text("You Give (Your Items):", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.Black, modifier = Modifier.align(Alignment.Start))
 
                 if (offerItems.isNotEmpty()) {
@@ -578,7 +577,7 @@ fun TradeProposalDialog(
                 Icon(Icons.Default.SwapHoriz, "Trade", tint = Color.Black, modifier = Modifier.size(32.dp))
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // --- YOU WANT ---
+                //  YOU WANT
                 Text("You Want:", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.Black, modifier = Modifier.align(Alignment.Start))
 
                 if (requestItems.isNotEmpty()) {
@@ -605,7 +604,7 @@ fun TradeProposalDialog(
                         BasicTextField(value = currentRequestAmount, onValueChange = { if(it.all { char -> char.isDigit() }) currentRequestAmount = it }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), textStyle = TextStyle(fontFamily = MineQuestFont, fontSize = 18.sp, textAlign = TextAlign.Center), modifier = Modifier.width(50.dp).background(Color.White).border(1.dp, Color.Black).padding(8.dp))
                         Spacer(modifier = Modifier.width(8.dp))
 
-                        // --- VERIFICAÇÃO DE STOCK DO ALVO ---
+                        //  VERIFICAÇÃO DE STOCK DO ALVO
                         Button(
                             onClick = {
                                 val qty = currentRequestAmount.toIntOrNull() ?: 0
@@ -614,7 +613,7 @@ fun TradeProposalDialog(
                                     val alreadyAdded = requestItems[currentRequestBlock] ?: 0
 
                                     if ((qty + alreadyAdded) > maxAvailable) {
-                                        // MOSTRA O NOME DO JOGADOR NO ERRO
+
                                         val nameToDisplay = targetUserName ?: "Target"
                                         errorMessage = "$nameToDisplay only has $maxAvailable of $currentRequestBlock!"
                                     } else {
@@ -662,7 +661,7 @@ fun TradeProposalDialog(
 fun UserProfileDialog(
     message: Message,
     onDismiss: () -> Unit,
-    onStartTrade: () -> Unit // Callback para iniciar troca
+    onStartTrade: () -> Unit
 ) {
     val database = FirebaseDatabase.getInstance().getReference("users")
     val myUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -711,7 +710,7 @@ fun UserProfileDialog(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // --- BOTÃO DE TRADE PRIVADA ---
+                // BOTÃO DE TRADE PRIVADA
                 if (message.senderId != myUserId) {
                     Button(
                         onClick = onStartTrade,
@@ -732,7 +731,7 @@ fun UserProfileDialog(
     }
 }
 
-// GRID DE INVENTÁRIO (AUXILIAR)
+
 @Composable
 fun ChatInventoryGrid(slots: List<ChatInventorySlot>, columns: Int = 4) {
     val rowsNeeded = (slots.size + columns - 1) / columns
@@ -792,7 +791,7 @@ fun ChatBubble(
 
     val bubbleShape = if (message.isMine) RoundedCornerShape(16.dp, 16.dp, 16.dp, 4.dp) else RoundedCornerShape(16.dp, 16.dp, 4.dp, 16.dp)
 
-    //  LÓGICA DE TEMPORIZADOR
+
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     if (message.isTrade && message.arrivalTimestamp > 0 && !message.isCompleted) {
@@ -830,10 +829,10 @@ fun ChatBubble(
                     }
                     val statusColor = if(message.isCancelled) Color(0xFF8B0000) else tradeTextColor
 
-                    // TÍTULO DA TROCA
+
                     Text(text = statusText, fontFamily = MineQuestFont, fontWeight = FontWeight.Bold, color = statusColor)
 
-                    // --- TEXTO INFORMATIVO ---
+
                     val infoText = if (message.targetId.isNotEmpty()) {
                         if (message.isMine) "(Private offer by You)" else "(Private offer by ${message.senderName})"
                     } else {
@@ -847,12 +846,12 @@ fun ChatBubble(
                         fontSize = 10.sp,
                         color = Color.White.copy(alpha = 0.7f)
                     )
-                    // -------------------------
+
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                        // O QUE EU RECEBO (LISTA)
+                        // O QUE EU RECEBO
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             Text(text = "You receive:", fontFamily = MineQuestFont, color = Color.White, fontSize = 10.sp)
                             TradeItemsRow(items = message.offerItems)
@@ -868,7 +867,7 @@ fun ChatBubble(
                                 .size(28.dp)
                         )
 
-                        // O QUE EU DOU (LISTA)
+                        // O QUE EU DOU
                         Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                             Text(text = "You give:", fontFamily = MineQuestFont, color = Color.White, fontSize = 10.sp)
                             TradeItemsRow(items = message.requestItems)

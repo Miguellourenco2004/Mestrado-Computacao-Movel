@@ -8,13 +8,13 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Looper
 import android.widget.Toast
-// --- NOVOS IMPORTS PARA O SHAKE ---
+
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import kotlin.math.sqrt
-// ----------------------------------
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
@@ -64,13 +64,12 @@ fun MapScreen(
     viewModel: MapViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
 
-    //  SETUP DE VARIÁVEIS E ESTADOS
+
 
     val context = LocalContext.current
     val fused = remember { LocationServices.getFusedLocationProviderClient(context) }
     val placesClient = remember { Places.createClient(context) }
 
-    // Estados observados do ViewModel
     val currentLocation by viewModel.currentLocation.collectAsState()
     val destination by viewModel.destination.collectAsState()
     val routePoints by viewModel.routePoints.collectAsState()
@@ -93,10 +92,10 @@ fun MapScreen(
     var showErrorDialog by remember { mutableStateOf(false) }
     var profileImageName by remember { mutableStateOf("minecraft_creeper_face") }
 
-    // --- NOVO: Variáveis para a Picareta e Diálogo ---
+
     var currentPickaxeLevel by remember { mutableIntStateOf(0) }
     var showMiningShakeDialog by remember { mutableStateOf(false) }
-    // ------------------------------------------------
+
 
     // Camera
     val cameraPositionState = rememberCameraPositionState {
@@ -104,12 +103,12 @@ fun MapScreen(
     }
 
 
-    // Variável para garantir que só centramos automaticamente na primeira vez
+
     var hasCenteredOnUser by remember { mutableStateOf(false) }
 
     // Efeito que corre sempre que a localização muda
     LaunchedEffect(currentLocation) {
-        // Se ainda não centrámos e a localização já foi encontrada (não é null)
+
         if (!hasCenteredOnUser && currentLocation != null) {
             cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(currentLocation!!, 17f))
             hasCenteredOnUser = true // Marca como feito para não repetir
@@ -122,7 +121,7 @@ fun MapScreen(
     //  PERMISSÕES E LAUNCHERS
 
 
-    // Launcher da Câmara
+
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap: Bitmap? ->
@@ -130,10 +129,10 @@ fun MapScreen(
             androidx.palette.graphics.Palette.from(bitmap).generate { palette ->
                 val swatch = palette?.dominantSwatch ?: palette?.vibrantSwatch
                 if (swatch != null) {
-                    // Chama o ViewModel para processar a cor
+
                     viewModel.processCapturedColor(swatch.rgb)
                 } else {
-                    // TRADUZIDO: "Could not detect color"
+
                     Toast.makeText(context, "Could not detect color", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -158,12 +157,12 @@ fun MapScreen(
 
 
 
-// --- NOVO: Estados para controlar os diálogos de interação ---
+
     var selectedPlayer by remember { mutableStateOf<User?>(null) }
     var showTradeDialog by remember { mutableStateOf(false) }
 
 
-    // Carregar dados iniciais e localização
+
     LaunchedEffect(Unit) {
         viewModel.loadMarkers(context)
         viewModel.loadPlayers()
@@ -175,13 +174,13 @@ fun MapScreen(
             db.child(user.uid).get().addOnSuccessListener { snap ->
                 profileImageName = snap.child("profileImage").getValue(String::class.java) ?: "minecraft_creeper_face"
 
-                // Ler o nível da picareta
+
                 val nivel = snap.child("pickaxeIndex").getValue(Int::class.java) ?: 0
                 currentPickaxeLevel = nivel
             }
         }
 
-        // Posição GPS inicial
+
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             fused.lastLocation.addOnSuccessListener {
                 if (it != null) viewModel.setCurrentLocation(LatLng(it.latitude, it.longitude))
@@ -203,7 +202,7 @@ fun MapScreen(
         )
     }
 
-    // Controlar erros
+
     LaunchedEffect(miningError) { if (miningError != null) showErrorDialog = true }
 
     // Animar câmara quando o destino ou local muda
@@ -224,10 +223,10 @@ fun MapScreen(
     val userIconRes = getUserImageResource(profileImageName)
 
 
-    // INTERFACE VISUAL
 
 
-    //  Dialogs
+
+
     if (showErrorDialog && miningError != null) {
         MiningErrorDialog(miningError!!) { showErrorDialog = false; viewModel.clearMiningError() }
     }
@@ -235,21 +234,21 @@ fun MapScreen(
         MiningSuccessDialog(miningResult!!) { viewModel.clearMiningResult() }
     }
 
-    // --- DIÁLOGO DE MINERAÇÃO POR ABANÃO ---
+
     if (showMiningShakeDialog && nearbyMarker != null) {
         val iconRes = viewModel.getIconForMarker(nearbyMarker!!.id)
 
-        // Obter a imagem da MINHA picareta atual
+
         val myPickaxeImage = getPickaxeImageByLevel(currentPickaxeLevel)
 
         MiningShakeDialog(
             iconRes = iconRes,
             structureName = nearbyMarker!!.name,
-            pickaxeImageRes = myPickaxeImage, // Passar a picareta correta
+            pickaxeImageRes = myPickaxeImage,
             onMiningComplete = {
-                // 1. Fechar o diálogo de abanar
+
                 showMiningShakeDialog = false
-                // 2. Chamar a função real de mineração no ViewModel
+
                 viewModel.mineBlockFromStructure(iconRes)
             },
             onDismiss = {
@@ -257,11 +256,11 @@ fun MapScreen(
             }
         )
     }
-    // ---------------------------------------
+
 
     Box(Modifier.fillMaxSize()) {
 
-        // MAPA
+
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -272,14 +271,14 @@ fun MapScreen(
         ) {
             // Player Local
             currentLocation?.let { pos ->
-                // TRADUZIDO: "Eu" -> "Me"
+
                 Marker(
                     state = MarkerState(pos), title = "Me",
                     icon = getUserBitmap(userIconRes), anchor = Offset(0.5f, 0.5f)
                 )
             }
 
-            // Outros Players
+
             players.forEach { user ->
                 val playerPos = LatLng(user.lat!!, user.lng!!)
                 Marker(
@@ -287,18 +286,14 @@ fun MapScreen(
                     icon = getUserBitmap(getUserImageResource(user.profileImage ?: "")),
                     anchor = Offset(0.5f, 0.5f),
                     onClick = {
-                        /* viewModel.setDestination(playerPos)
-                         currentLocation?.let { origem -> if (navigationEnabled) viewModel.Rota(origem, playerPos) }
-                         true
 
-                         */
                         selectedPlayer = user
                         true
                     }
                 )
             }
 
-            // Marker de Destino Invisível
+            // Marker de Destino
             destination?.let { dest ->
                 Marker(
                     state = MarkerState(dest), title = null,
@@ -413,20 +408,20 @@ fun MapScreen(
                 contentPadding = PaddingValues(8.dp), shape = RectangleShape,
                 colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF513220)),
                 onClick = {
-                    // Agora abre o diálogo de abanão
+
                     showMiningShakeDialog = true
                 }
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Mostra sempre uma picareta genérica no botão, ou a do user se preferir
+
                     Image(painter = painterResource(id = R.drawable.diamond_pickaxe), contentDescription = "Mine", modifier = Modifier.size(24.dp))
-                    // TRADUZIDO: "MINERAR" -> "MINE"
+
                     Text("MINE", fontFamily = MineQuestFont, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        // 1. Mostrar o Perfil do Jogador Clicado
+        // Mostrar o Perfil do Jogador Clicado
         if (selectedPlayer != null) {
             MapPlayerProfileDialog(
                 user = selectedPlayer!!,
@@ -447,11 +442,11 @@ fun MapScreen(
                 },
                 onTradeClick = {
                     showTradeDialog = true
-                    // Nota: NÃO metemos selectedPlayer a null aqui, precisamos dele para o ID
+
                 }
             )
         }
-// 2. Mostrar o Diálogo de Proposta de Troca
+// Mostrar o Diálogo de Proposta de Troca
         if (showTradeDialog && selectedPlayer != null) {
             TradeProposalDialog(
                 viewModel = chatViewModel,
@@ -459,7 +454,7 @@ fun MapScreen(
                     showTradeDialog = false
                     selectedPlayer = null
                 },
-                // Passar o ID do jogador selecionado para a troca ser privada
+
                 targetUserId = selectedPlayer!!.id
             )
         }
@@ -472,7 +467,7 @@ fun MapScreen(
 // HELPERS DE UI
 
 @Composable
-// Em Map.kt, substitui a função MapPlayerProfileDialog por esta:
+
 
 fun MapPlayerProfileDialog(
     user: User,
@@ -480,26 +475,26 @@ fun MapPlayerProfileDialog(
     onGoTo: () -> Unit,
     onTradeClick: () -> Unit
 ) {
-    // Cor da borda estilo madeira (igual ao Chat)
+
     val minecraftBorderColor = Color(0xFF6B3B25)
 
     Dialog(onDismissRequest = onDismiss) {
-        // Caixa Principal
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color(0xFFC6C6C6), RectangleShape) // Fundo Cinza Claro
-                .border(4.dp, Color.Black, RectangleShape)     // Borda Exterior Preta
+                .border(4.dp, Color.Black, RectangleShape)
                 .padding(4.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(2.dp, Color.Gray, RectangleShape) // Borda Interior
+                    .border(2.dp, Color.Gray, RectangleShape)
                     .padding(16.dp)
             ) {
-                // --- CABEÇALHO ---
+                // CABEÇALHO
                 Box(modifier = Modifier.border(2.dp, Color.Black, RectangleShape).padding(2.dp)) {
                     Image(
                         painter = painterResource(id = getUserImageResource(user.profileImage ?: "steve")),
@@ -512,7 +507,7 @@ fun MapPlayerProfileDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // TRADUZIDO: "Desconhecido" -> "Unknown"
+
                 Text(
                     text = user.username ?: "Unknown",
                     fontFamily = MineQuestFont,
@@ -522,7 +517,7 @@ fun MapPlayerProfileDialog(
                     textAlign = TextAlign.Center
                 )
 
-                // TRADUZIDO: "Nível Picareta" -> "Pickaxe Level"
+
                 Text(
                     text = "Pickaxe Level: ${user.pickaxeIndex?.plus(1)}",
                     fontFamily = MineQuestFont,
@@ -533,17 +528,17 @@ fun MapPlayerProfileDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // --- BOTÕES ESTILO MINECRAFT ---
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp) // Espaço entre botões
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botão TROCAR (Laranja)
+
                     Button(
                         onClick = onTradeClick,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000)),
                         shape = RectangleShape,
-                        // Borda castanha grossa estilo Minecraft
+
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp)
@@ -558,12 +553,12 @@ fun MapPlayerProfileDialog(
                         }
                     }
 
-                    // Botão IR (Castanho Escuro)
+
                     Button(
                         onClick = onGoTo,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF513220)),
                         shape = RectangleShape,
-                        // Borda preta ou mais clara para contraste
+
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp)
@@ -573,7 +568,7 @@ fun MapPlayerProfileDialog(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Place, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(4.dp))
-                            // TRADUZIDO: "IR" -> "GO"
+
                             Text("GO", fontFamily = MineQuestFont, fontSize = 14.sp, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -581,7 +576,7 @@ fun MapPlayerProfileDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botão FECHAR (Vermelho)
+
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB71C1C)), // Vermelho escuro
@@ -591,7 +586,7 @@ fun MapPlayerProfileDialog(
                         .height(40.dp)
                         .border(2.dp, Color.Black, RectangleShape)
                 ) {
-                    // TRADUZIDO: "FECHAR" -> "CLOSE"
+
                     Text("CLOSE", fontFamily = MineQuestFont, fontSize = 12.sp, color = Color.White)
                 }
             }
@@ -680,7 +675,7 @@ fun getUserImageResource(name: String): Int {
 }
 
 
-// --- NOVAS FUNÇÕES E LOGICA DE SHAKE ---
+
 
 @Composable
 fun ShakeDetector(
@@ -735,17 +730,17 @@ fun ShakeDetector(
 fun MiningShakeDialog(
     iconRes: Int,
     structureName: String,
-    pickaxeImageRes: Int, // Agora recebe a imagem da picareta
+    pickaxeImageRes: Int,
     onMiningComplete: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
 
-    // Estado do contador de abanões
+
     var shakesCount by remember { mutableIntStateOf(0) }
     val shakesRequired = 5
 
-    // Detetar o abanão
+
     ShakeDetector(context = context) {
         shakesCount++
         if (shakesCount >= shakesRequired) {
@@ -753,7 +748,7 @@ fun MiningShakeDialog(
         }
     }
 
-    // Calcular progresso
+
     val progress = (shakesCount.toFloat() / shakesRequired.toFloat()).coerceIn(0f, 1f)
 
     AlertDialog(
@@ -762,7 +757,7 @@ fun MiningShakeDialog(
         shape = RectangleShape,
         modifier = Modifier.border(4.dp, Color(0xFF513220), RectangleShape),
         title = {
-            // TRADUZIDO: "A Minerar..." -> "Mining..."
+
             Text(
                 text = "Mining...",
                 fontFamily = MineQuestFont,
@@ -788,8 +783,8 @@ fun MiningShakeDialog(
                 val rotation = if (shakesCount % 2 == 0) -15f else 15f
 
                 Image(
-                    painter = painterResource(id = pickaxeImageRes), // Usa a picareta correta
-                    // TRADUZIDO: "Picareta" -> "Pickaxe"
+                    painter = painterResource(id = pickaxeImageRes),
+
                     contentDescription = "Pickaxe",
                     modifier = Modifier
                         .size(100.dp)
@@ -798,7 +793,7 @@ fun MiningShakeDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // TRADUZIDO: "Abana o telemóvel para partires o bloco!" -> "Shake your phone to break the block!"
+
                 Text(
                     text = "Shake your phone to break the block!",
                     fontFamily = MineQuestFont,
@@ -823,14 +818,14 @@ fun MiningShakeDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
                 shape = RectangleShape
             ) {
-                // TRADUZIDO: "Cancelar" -> "Cancel"
+
                 Text("Cancel", fontFamily = MineQuestFont, color = Color.White)
             }
         }
     )
 }
 
-// Função auxiliar para mapear nível -> imagem
+
 fun getPickaxeImageByLevel(level: Int): Int {
     return when (level) {
         0 -> R.drawable.madeira

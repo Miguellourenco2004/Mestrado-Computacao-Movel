@@ -223,8 +223,7 @@ fun DailyQuestsDisplay(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Checkbox(
-                        // ALTERAÇÃO AQUI:
-                        // O visto aparece se a missão estiver marcada como completa OU se o progresso já atingiu o alvo
+
                         checked = progress.isCompleted || progress.currentProgress >= quest.target,
 
                         onCheckedChange = {},

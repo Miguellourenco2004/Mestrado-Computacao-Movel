@@ -4,12 +4,12 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.minequest.model.User
-// --- NOVOS IMPORTS PARA AS MISSÕES ---
+
 import com.example.minequest.model.QuestType
 import com.example.minequest.model.UserQuestProgress
 import kotlinx.coroutines.tasks.await
 import java.util.Calendar
-// -------------------------------------
+
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
@@ -35,7 +35,7 @@ import org.json.JSONObject
 import kotlin.random.Random
 import android.graphics.Color as AndroidColor
 
-// Mantemos o resultado simples, como pediste
+
 data class MiningResult(
     val blockId: String,
     val blockName: String,
@@ -48,7 +48,7 @@ class MapViewModel : ViewModel() {
 
     //  VARIÁVEIS
 
-    // Markers e Jogadores
+
     private val _lisboaMarkers = MutableStateFlow<List<MapMarker>>(emptyList())
     val lisboaMarkers = _lisboaMarkers.asStateFlow()
 
@@ -104,7 +104,7 @@ class MapViewModel : ViewModel() {
     )
 
 
-    // INIT
+
     init {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
         if (uid != null) {
@@ -405,7 +405,7 @@ class MapViewModel : ViewModel() {
         processDrop(blockId, blockName, baseXp, userRef)
     }
 
-    // --- FUNÇÃO AUXILIAR PARA VERIFICAR A DATA DA MISSÃO ---
+
     private fun isQuestAssignedToday(assignedDate: Long): Boolean {
         if (assignedDate == 0L) return false
         val assignedCal = Calendar.getInstance().apply { timeInMillis = assignedDate }
@@ -414,26 +414,25 @@ class MapViewModel : ViewModel() {
                 assignedCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
     }
 
-    // --- FUNÇÃO PROCESSDROP ATUALIZADA (COM LÓGICA DE MISSÕES) ---
+
     private fun processDrop(blockId: String, blockName: String, baseXp: Int, userRef: DatabaseReference) {
         viewModelScope.launch {
             try {
-                // 1. Cálculos iniciais da mineração
+
                 val pickaxeLevel = currentUserData?.pickaxeIndex ?: 0
                 val quantity = Random.nextInt(1 + pickaxeLevel, 6 + (pickaxeLevel * 2))
                 var totalXp = baseXp * quantity
 
-                // 2. Lógica de Missões (Silenciosa)
-                // Verifica se há alguma missão de MINERAR e atualiza o progresso
+
                 val questsRef = userRef.child("quest_progress")
 
-                // 'await()' permite ler os dados de forma síncrona dentro da coroutine
+
                 val questsSnapshot = questsRef.get().await()
 
                 for (child in questsSnapshot.children) {
                     val progress = child.getValue(UserQuestProgress::class.java) ?: continue
 
-                    // Verifica: Missão não completa + Tipo MINE_BLOCKS + Atribuída hoje
+
                     if (!progress.isCompleted &&
                         progress.questDetails?.type == QuestType.MINE_BLOCKS &&
                         isQuestAssignedToday(progress.assignedDate)) {
@@ -442,15 +441,14 @@ class MapViewModel : ViewModel() {
                         val newProgressValue = (progress.currentProgress + quantity).coerceAtMost(target)
                         var isCompletedNow = false
 
-                        // Se atingiu o objetivo
+
                         if (newProgressValue >= target) {
                             isCompletedNow = true
-                            // Adiciona a recompensa da missão ao XP total desta mineração
+
                             totalXp += progress.questDetails.reward
                         }
 
-                        // Atualiza o progresso no Firebase
-                        // O Ranking "ouve" isto e vai atualizar a barra automaticamente!
+
                         val updates = mapOf(
                             "currentProgress" to newProgressValue,
                             "isCompleted" to isCompletedNow
@@ -459,7 +457,7 @@ class MapViewModel : ViewModel() {
                     }
                 }
 
-                // 3. Atualizar Inventário e XP do User (com o total já somado)
+
                 val snapshot = userRef.get().await()
                 val currentQty = snapshot.child("inventory").child(blockId).getValue(Int::class.java) ?: 0
                 val currentXP = snapshot.child("pontosXP").getValue(Int::class.java) ?: 0
@@ -467,7 +465,7 @@ class MapViewModel : ViewModel() {
                 userRef.child("inventory").child(blockId).setValue(currentQty + quantity).await()
                 userRef.child("pontosXP").setValue(currentXP + totalXp).await()
 
-                // 4. Mostrar resultado (sem mensagem de missão, apenas o XP total)
+
                 _miningResult.value = MiningResult(blockId, blockName, quantity, totalXp, blockDrawable(blockId))
 
             } catch (e: Exception) {
@@ -478,7 +476,7 @@ class MapViewModel : ViewModel() {
     }
 
 
-    // Loot Tables & Drawables
+
 
     fun clearMiningError() { _miningError.value = null }
     fun clearMiningResult() { _miningResult.value = null }

@@ -10,10 +10,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-// --- IMPORT PARA SCROLL ---
+
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-// -------------------------
+
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -102,7 +102,7 @@ fun MineBlock(
         Picareta("Netherite Pickaxe", R.drawable.netherite, 1500, netherite_pickaxe_blocks_cost)
     )
 
-    // --- LER ESTADOS DO VIEWMODEL ---
+    //  LER ESTADOS DO VIEWMODEL
     val indiceAtual by viewModel.pickaxeIndex.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
 
@@ -121,11 +121,11 @@ fun MineBlock(
     val infiniteTransition = rememberInfiniteTransition(label = "PickaxeWobble")
 
     val rotationAngle by infiniteTransition.animateFloat(
-        initialValue = -15f, // Começa -15 graus (inclinada para a esquerda)
-        targetValue = 15f,   // Vai até 15 graus (inclinada para a direita)
+        initialValue = -15f,
+        targetValue = 15f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 800, easing = LinearEasing), // Duração de 0.8s
-            repeatMode = RepeatMode.Reverse // Faz a animação reverter (ir e voltar)
+            animation = tween(durationMillis = 800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
         ),
         label = "PickaxeRotation"
     )
@@ -138,13 +138,13 @@ fun MineBlock(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                // --- ALTERAÇÃO 1: Scroll adicionado aqui ---
+
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // Título "MineQuest"
+
             Text(
                 text = stringResource(id = R.string.minequest),
                 fontSize = 32.sp,
@@ -158,15 +158,15 @@ fun MineBlock(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    // --- ALTERAÇÃO 2: Removido weight(1f) para não conflitar com scroll ---
+
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f) // Mantém a largura do botão antigo
-                        .height(70.dp)      // Mantém a altura
-                        .padding(vertical = 8.dp) // Mantém o padding
+                        .fillMaxWidth(0.8f)
+                        .height(70.dp)
+                        .padding(vertical = 8.dp)
                         .background( //
                             color = Color(0xFF323232),
                             shape = RectangleShape// Cantos arredondados
@@ -320,8 +320,7 @@ fun MineBlock(
                     )
                 }
 
-                // --- ALTERAÇÃO 3: Substituído weight por altura fixa ---
-                // Spacer(modifier = Modifier.weight(1f)) <- Antigo
+
                 Spacer(modifier = Modifier.height(50.dp)) // <- Novo
 
                 Text(text = stringResource(id = R.string.all_pickaxes), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold, fontFamily = MineQuestFont)

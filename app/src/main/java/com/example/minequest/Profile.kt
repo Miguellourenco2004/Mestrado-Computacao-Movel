@@ -65,16 +65,14 @@ fun Profile(
     var profileImageName by remember { mutableStateOf("") }
     var pontosXP by remember { mutableIntStateOf(0) }
 
-    // Vai guardar qual o bloco a dropar
     var slotToDrop by remember { mutableStateOf<InventorySlot?>(null) }
 
-    // Estado para recarregar a lista de blocos do inventário -> Qunado mudar os blocos do inventário
-    // vão voltar a ser "fetched" na base de dados
+
     var reloadTrigger by remember { mutableIntStateOf(0) }
 
     var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
-    // Ir buscar os dados do perfil do user
+
     LaunchedEffect(auth.currentUser) {
         auth.currentUser?.let { user ->
             loadUserData(
@@ -91,7 +89,7 @@ fun Profile(
 
     val imageRes = getImageResourceByName(profileImageName)
 
-    // Ir buscar o inventário do user
+
     LaunchedEffect(auth.currentUser, reloadTrigger) {
         auth.currentUser?.let { user ->
             loadInventory(
@@ -268,7 +266,7 @@ fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6, o
                 }
             }
 
-            // Ads a space between each row
+
             if (row < rows - 1) {
                 Spacer(modifier = Modifier.height(4.dp))
             }
