@@ -42,14 +42,6 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 
-
-data class DailyQuestUiState(
-    val isLoading: Boolean = true,
-    val quests: Map<String, DailyQuest> = emptyMap(),
-    val progress: Map<String, UserQuestProgress> = emptyMap(),
-    val error: String? = null
-)
-
 @Composable
 fun Profile(
     navController: NavController,
@@ -59,20 +51,19 @@ fun Profile(
     val auth = FirebaseAuth.getInstance()
     val database = FirebaseDatabase.getInstance().getReference("users")
 
-    val userId = auth.currentUser?.uid ?: "GUEST_USER_ID"
-
     var username by remember { mutableStateOf("User") }
     var profileImageName by remember { mutableStateOf("") }
     var pontosXP by remember { mutableIntStateOf(0) }
 
+    var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
+
     // Vai guardar qual o bloco a dropar
     var slotToDrop by remember { mutableStateOf<InventorySlot?>(null) }
 
-    // Estado para recarregar a lista de blocos do inventário -> Qunado mudar os blocos do inventário
+    // Estado para recarregar a lista de blocos do inventário -> Quando mudar os blocos do inventário
     // vão voltar a ser "fetched" na base de dados
     var reloadTrigger by remember { mutableIntStateOf(0) }
 
-    var inventorySlots by remember { mutableStateOf<List<InventorySlot>>(emptyList()) }
 
     // Ir buscar os dados do perfil do user
     LaunchedEffect(auth.currentUser) {
@@ -237,7 +228,6 @@ fun InventorySlotView(slot: InventorySlot?, modifier: Modifier = Modifier, onCli
 @Composable
 fun InventoryGrid(slots: List<InventorySlot>, rows: Int = 4, columns: Int = 6, onSlotClick: (InventorySlot) -> Unit = {}) {
     val totalSlots = rows * columns
-
 
     val trimmedSlots = slots.take(totalSlots)
 

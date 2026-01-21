@@ -24,8 +24,10 @@ import androidx.compose.ui.res.stringResource
 fun LoginScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
 
+    // Input variables
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(false) }
 
