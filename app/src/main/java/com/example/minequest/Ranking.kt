@@ -98,7 +98,6 @@ fun Ranking(navController: NavController, currentUser: FirebaseUser?) {
             }
     }
 
-
     // Missões globais e progresso individual
     LaunchedEffect(userId, questReloadTrigger) {
         questUiState = DailyQuestUiState(isLoading = true)
@@ -259,8 +258,10 @@ suspend fun loadDailyQuestsState(
     questRepository: QuestRepository
 ): DailyQuestUiState {
 
+    // Vai buscar as daily tasks
     val loadedQuests = questRepository.getOrCreateGlobalDailyQuests()
 
+    // Vai buscar o progresso do user para as daily tasks
     val progressMap = loadedQuests.mapValues { (_, quest) ->
         questRepository.getOrCreateIndividualProgress(quest)
     }
