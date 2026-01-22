@@ -123,10 +123,13 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     private fun calculateDeliveryDetails(distanceMeters: Double): Pair<Long, Int> {
         val distanceKm = distanceMeters / 1000
         val thresholdKm = 1.0
+
         return if (distanceKm <= thresholdKm) {
-            Pair(20 * 1000L, 5)
+
+            Pair(5 * 60 * 1000L, 5)
         } else {
-            Pair(20 * 1000L, 15)
+
+            Pair(60 * 60 * 1000L, 15)
         }
     }
 
@@ -167,12 +170,12 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                             val dist = calculateDistance(myLat, myLng, tLat, tLng)
                             val (time, xp) = calculateDeliveryDetails(dist)
 
-                            pushTradeMessage(offerItems, requestItems, targetUserId, 10 * 1000L, xp)
+                            pushTradeMessage(offerItems, requestItems, targetUserId, time, xp)
                             onSuccess()
                         }
                     }
                 } else {
-                    pushTradeMessage(offerItems, requestItems, null, 5 * 60 * 1000L, 20)
+                    pushTradeMessage(offerItems, requestItems, null, 10 * 60 * 60 * 1000L, 20)
                     onSuccess()
                 }
             } else {

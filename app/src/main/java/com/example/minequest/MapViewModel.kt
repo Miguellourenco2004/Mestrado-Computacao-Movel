@@ -351,13 +351,13 @@ class MapViewModel : ViewModel() {
     }
 
     private fun mineBlockFromColor(colorCategory: String) {
-        checkCooldownAndMine(20, { m -> "Limit reached! Wait $m more min." }) { userRef ->
+        checkCooldownAndMine(3, { m -> "Limit reached! Wait $m more min." }) { userRef ->
             executeMiningColor(colorCategory, userRef)
         }
     }
 
     fun mineBlockFromStructure(iconResId: Int) {
-        checkCooldownAndMine(50, { m -> "You are tired! Wait $m more min." }) { userRef ->
+        checkCooldownAndMine(10, { m -> "You are tired! Wait $m more min." }) { userRef ->
             executeMiningStructure(iconResId, userRef)
         }
     }
