@@ -351,13 +351,13 @@ class MapViewModel : ViewModel() {
     }
 
     private fun mineBlockFromColor(colorCategory: String) {
-        checkCooldownAndMine(10, { m -> "Limit reached! Wait $m more min." }) { userRef ->
+        checkCooldownAndMine(20, { m -> "Limit reached! Wait $m more min." }) { userRef ->
             executeMiningColor(colorCategory, userRef)
         }
     }
 
     fun mineBlockFromStructure(iconResId: Int) {
-        checkCooldownAndMine(20, { m -> "You are tired! Wait $m more min." }) { userRef ->
+        checkCooldownAndMine(50, { m -> "You are tired! Wait $m more min." }) { userRef ->
             executeMiningStructure(iconResId, userRef)
         }
     }
@@ -494,6 +494,7 @@ class MapViewModel : ViewModel() {
             "wood" -> R.drawable.wood
             "lapis" -> R.drawable.lapis
             "neder" -> R.drawable.netherite_b
+            "obsidian" -> R.drawable.obsidian
             else -> R.drawable.bloco_terra
         }
     }
@@ -506,7 +507,7 @@ class MapViewModel : ViewModel() {
             "Green" -> if (rand < 0.55) Triple("dirt", "Dirt", 1) else if (rand < 0.90) Triple("grace", "Grass", 1) else Triple("emerald", "Emerald", 20)
             "Blue" -> if (rand < 0.80) Triple("lapis", "Lapis Lazuli", 5) else Triple("diamond", "Diamond", 50)
             "Yellow" -> if (rand < 0.70) Triple("sand", "Sand", 1) else Triple("gold", "Gold Ore", 10)
-            "Black" -> if (rand < 0.50) Triple("coal", "Coal", 3) else if (rand < 0.90) Triple("obsidian", "Obsidian", 15) else Triple("neder", "Netherite", 100)
+            "Black" -> if (rand < 0.50) Triple("coal", "Coal", 3) else if (rand < 0.90) Triple("obsidian", "obsidian", 15) else Triple("neder", "Netherite", 100)
             else -> Triple("stone", "Mysterious Stone", 1)
         }
     }

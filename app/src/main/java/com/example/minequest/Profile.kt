@@ -469,9 +469,14 @@ private fun blockDrawable(id: String): Int {
         "wood" -> R.drawable.wood
         "lapis" -> R.drawable.lapis
         "neder" -> R.drawable.netherite_b
+        "obsidian" -> R.drawable.obsidian
         else -> R.drawable.bloco_terra
     }
+
 }
+
+
+
 
 private fun pickaxeDrawable(index: Int): Int {
     return when(index) {
